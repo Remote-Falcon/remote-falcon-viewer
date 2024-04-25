@@ -48,17 +48,6 @@ spec:
         env:
           - name: SPRING_PROFILES_ACTIVE
             value: #{Env}#
-          - name: spring.datasource.username
-            valueFrom:
-              secretKeyRef:
-                name: remote-falcon-viewer
-                key: mysql-user
-          - name: spring.datasource.password
-            valueFrom:
-              secretKeyRef:
-                name: remote-falcon-viewer
-                key: mysql-pass
-          - name: spring.data.mongodb.uri
             valueFrom:
               secretKeyRef:
                 name: remote-falcon-viewer
