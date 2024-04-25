@@ -48,6 +48,7 @@ spec:
         env:
           - name: SPRING_PROFILES_ACTIVE
             value: #{Env}#
+          - name: spring.data.mongodb.uri
             valueFrom:
               secretKeyRef:
                 name: remote-falcon-viewer
