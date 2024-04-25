@@ -170,11 +170,18 @@
             <version>${jacoco.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.remotefalcon</groupId>
+            <groupId>com.github.Remote-Falcon</groupId>
             <artifactId>remote-falcon-library</artifactId>
-            <version>1.0.0</version>
+            <version>main-9ae3c8eaee-1</version>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
