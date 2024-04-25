@@ -32,7 +32,7 @@ spec:
           name: apmsocketpath
       containers:
       - name: #{Application}#
-        image: #{Image}#:#{Tag}#
+        image: #{Image}#
         resources:
           requests:
             memory: #{Requests.Memory}#
@@ -58,16 +58,11 @@ spec:
               secretKeyRef:
                 name: remote-falcon-viewer
                 key: mysql-pass
-          - name: spring.data.mongodb.username
+          - name: spring.data.mongodb.uri
             valueFrom:
               secretKeyRef:
                 name: remote-falcon-viewer
-                key: mongo-user
-          - name: spring.data.mongodb.password
-            valueFrom:
-              secretKeyRef:
-                name: remote-falcon-viewer
-                key: mongo-pass
+                key: mongo-uri
           - name: jwt.viewer
             valueFrom:
               secretKeyRef:
@@ -102,7 +97,7 @@ spec:
           failureThreshold: 60
           initialDelaySeconds: 0
       imagePullSecrets:
-        - name: #{DockerHubSecret}#
+        - name: remote-falcon-ghcr
 ---
 apiVersion: v1
 kind: Service
