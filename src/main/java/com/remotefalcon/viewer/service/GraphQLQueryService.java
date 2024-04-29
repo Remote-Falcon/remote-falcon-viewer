@@ -44,21 +44,23 @@ public class GraphQLQueryService {
     }
 
     private List<Sequence> processSequencesForViewer(Show show) {
-        this.sortAndFilterSequences(show.getSequences());
-        this.filterSequenceGroups(show.getSequenceGroups());
-        List<Sequence> sequencesWithGroups = this.replaceSequencesWithSequenceGroups(show.getSequences(), show.getSequenceGroups());
-        return sequencesWithGroups;
+        List<Sequence> updatedSequences = show.getSequences();
+        List<SequenceGroup> updatedSequenceGroups = show.getSequenceGroups();
+        updatedSequences = this.sortAndFilterSequences(updatedSequences);
+        updatedSequenceGroups = this.filterSequenceGroups(updatedSequenceGroups);
+        return this.replaceSequencesWithSequenceGroups(updatedSequences, updatedSequenceGroups);
     }
 
-    private void sortAndFilterSequences(List<Sequence> sequences) {
+    private List<Sequence> sortAndFilterSequences(List<Sequence> sequences) {
         sequences.sort(Comparator.comparing(Sequence::getOrder));
-        sequences = sequences.stream()
+        return sequences.stream()
                 .filter(sequence -> sequence.getVisibilityCount() == 0)
+                .filter(Sequence::getActive)
                 .toList();
     }
 
-    private void filterSequenceGroups(List<SequenceGroup> sequenceGroups) {
-        sequenceGroups = sequenceGroups.stream()
+    private List<SequenceGroup> filterSequenceGroups(List<SequenceGroup> sequenceGroups) {
+        return sequenceGroups.stream()
                 .filter(group -> group.getVisibilityCount() == 0)
                 .toList();
     }
