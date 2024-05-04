@@ -10,6 +10,7 @@ type Show {
     activeViewers: [ActiveViewer]
     playingNow: String
     playingNext: String
+    playingNextFromSchedule: String
 }
 
 type Preference {

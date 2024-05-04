@@ -101,7 +101,7 @@ public class GraphQLMutationService {
             if(requestedSequence.isPresent()) {
                 this.checkIfSequenceRequested(show.get(), requestedSequence.get());
                 this.saveSequenceRequest(show.get(), requestedSequence.get(), false);
-                if(show.get().getPreferences().getPsaEnabled() && !show.get().getPsaSequences().isEmpty()) {
+                if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && !show.get().getPsaSequences().isEmpty()) {
                     this.handlePsaForJukebox(show.get());
                 }
                 return true;
@@ -118,7 +118,7 @@ public class GraphQLMutationService {
                         this.checkIfSequenceRequested(show.get(), sequence);
                         this.saveSequenceRequest(show.get(), sequence, false);
                     });
-                    if(show.get().getPreferences().getPsaEnabled() && !show.get().getPsaSequences().isEmpty()) {
+                    if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && !show.get().getPsaSequences().isEmpty()) {
                         this.handlePsaForJukebox(show.get());
                     }
                     return true;
@@ -257,7 +257,7 @@ public class GraphQLMutationService {
                     .position(request.getPosition() + 1)
                     .build()));
         }
-        this.updatePlayingNext(show);
+//        this.updatePlayingNext(show);
         if(!isPsa) {
             show.getStats().getJukebox().add(Stat.Jukebox.builder()
                     .dateTime(LocalDateTime.now())

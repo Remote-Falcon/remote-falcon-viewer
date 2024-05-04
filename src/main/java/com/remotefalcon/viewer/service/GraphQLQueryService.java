@@ -3,6 +3,7 @@ package com.remotefalcon.viewer.service;
 import com.remotefalcon.library.documents.Show;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.Page;
+import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Sequence;
 import com.remotefalcon.library.models.SequenceGroup;
 import com.remotefalcon.viewer.repository.ShowRepository;
@@ -26,9 +27,20 @@ public class GraphQLQueryService {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             show.get().setSequences(this.processSequencesForViewer(show.get()));
+            if(show.get().getRequests().isEmpty()) {
+                show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
+            }else {
+                this.updatePlayingNext(show.get());
+            }
             return show.get();
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+    }
+
+    private void updatePlayingNext(Show show) {
+        Optional<Request> nextRequest = show.getRequests().stream()
+                .min(Comparator.comparing(Request::getPosition));
+        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getName()));
     }
 
     public String activeViewerPage() {
@@ -44,21 +56,23 @@ public class GraphQLQueryService {
     }
 
     private List<Sequence> processSequencesForViewer(Show show) {
-        this.sortAndFilterSequences(show.getSequences());
-        this.filterSequenceGroups(show.getSequenceGroups());
-        List<Sequence> sequencesWithGroups = this.replaceSequencesWithSequenceGroups(show.getSequences(), show.getSequenceGroups());
-        return sequencesWithGroups;
+        List<Sequence> updatedSequences = show.getSequences();
+        List<SequenceGroup> updatedSequenceGroups = show.getSequenceGroups();
+        updatedSequences = this.sortAndFilterSequences(updatedSequences);
+        updatedSequenceGroups = this.filterSequenceGroups(updatedSequenceGroups);
+        return this.replaceSequencesWithSequenceGroups(updatedSequences, updatedSequenceGroups);
     }
 
-    private void sortAndFilterSequences(List<Sequence> sequences) {
+    private List<Sequence> sortAndFilterSequences(List<Sequence> sequences) {
         sequences.sort(Comparator.comparing(Sequence::getOrder));
-        sequences = sequences.stream()
+        return sequences.stream()
                 .filter(sequence -> sequence.getVisibilityCount() == 0)
+                .filter(Sequence::getActive)
                 .toList();
     }
 
-    private void filterSequenceGroups(List<SequenceGroup> sequenceGroups) {
-        sequenceGroups = sequenceGroups.stream()
+    private List<SequenceGroup> filterSequenceGroups(List<SequenceGroup> sequenceGroups) {
+        return sequenceGroups.stream()
                 .filter(group -> group.getVisibilityCount() == 0)
                 .toList();
     }
