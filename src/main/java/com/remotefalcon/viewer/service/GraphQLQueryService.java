@@ -3,6 +3,7 @@ package com.remotefalcon.viewer.service;
 import com.remotefalcon.library.documents.Show;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.Page;
+import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Sequence;
 import com.remotefalcon.library.models.SequenceGroup;
 import com.remotefalcon.viewer.repository.ShowRepository;
@@ -26,9 +27,20 @@ public class GraphQLQueryService {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             show.get().setSequences(this.processSequencesForViewer(show.get()));
+            if(show.get().getRequests().isEmpty()) {
+                show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
+            }else {
+                this.updatePlayingNext(show.get());
+            }
             return show.get();
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+    }
+
+    private void updatePlayingNext(Show show) {
+        Optional<Request> nextRequest = show.getRequests().stream()
+                .min(Comparator.comparing(Request::getPosition));
+        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getName()));
     }
 
     public String activeViewerPage() {
