@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/Remote-Falcon/remote-falcon-viewer/compare/v1.0.1...v1.0.2) (2024-05-04)
+
+
+### Bug Fixes
+
+* Trigger release ([20b4ee4](https://github.com/Remote-Falcon/remote-falcon-viewer/commit/20b4ee4debb3e5e3c6a78ce8ba6b0bef7a33ef60))
+
 ## [1.0.1](https://github.com/Remote-Falcon/remote-falcon-viewer/compare/v1.0.0...v1.0.1) (2024-05-04)
 
 
