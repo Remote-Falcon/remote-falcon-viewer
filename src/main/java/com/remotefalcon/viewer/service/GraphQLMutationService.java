@@ -101,6 +101,10 @@ public class GraphQLMutationService {
                     .findFirst();
             if(requestedSequence.isPresent()) {
                 this.checkIfSequenceRequested(show.get(), requestedSequence.get());
+                show.get().getStats().getJukebox().add(Stat.Jukebox.builder()
+                        .dateTime(LocalDateTime.now())
+                        .name(requestedSequence.get().getName())
+                        .build());
                 this.saveSequenceRequest(show.get(), requestedSequence.get(), false);
                 if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && !show.get().getPsaSequences().isEmpty()) {
                     this.handlePsaForJukebox(show.get());
@@ -115,6 +119,10 @@ public class GraphQLMutationService {
                             .filter(sequence -> StringUtils.equalsIgnoreCase(requestedSequenceGroup.get().getName(), sequence.getGroup()))
                             .sorted(Comparator.comparing(Sequence::getOrder))
                             .toList();
+                    show.get().getStats().getJukebox().add(Stat.Jukebox.builder()
+                            .dateTime(LocalDateTime.now())
+                            .name(requestedSequenceGroup.get().getName())
+                            .build());
                     sequencesInGroup.forEach(sequence -> {
                         this.checkIfSequenceRequested(show.get(), sequence);
                         this.saveSequenceRequest(show.get(), sequence, false);
@@ -252,13 +260,6 @@ public class GraphQLMutationService {
                     .position(request.getPosition() + 1)
                     .build()));
         }
-//        this.updatePlayingNext(show);
-        if(!isPsa) {
-            show.getStats().getJukebox().add(Stat.Jukebox.builder()
-                    .dateTime(LocalDateTime.now())
-                    .name(requestedSequence.getName())
-                    .build());
-        }
         this.showRepository.save(show);
     }
 
@@ -291,6 +292,7 @@ public class GraphQLMutationService {
 
     private void saveSequenceGroupVote(Show show, SequenceGroup votedSequenceGroup, String ipAddress) {
         Optional<Vote> sequenceVotes = show.getVotes().stream()
+                .filter(vote -> vote.getSequenceGroup() != null)
                 .filter(vote -> StringUtils.equalsIgnoreCase(vote.getSequenceGroup().getName(), votedSequenceGroup.getName()))
                 .findFirst();
         if(sequenceVotes.isPresent()) {
