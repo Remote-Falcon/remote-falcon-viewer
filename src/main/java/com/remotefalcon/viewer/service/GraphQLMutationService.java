@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -143,20 +144,14 @@ public class GraphQLMutationService {
                     .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
                     .findFirst();
             if(requestedSequence.isPresent()) {
-                this.saveSequenceVote(show.get(), requestedSequence.get(), ipAddress);
-                //PSA is handled when a winning vote is played
+                this.saveSequenceVote(show.get(), requestedSequence.get(), ipAddress, false);
                 return true;
             }else { //It's a sequence group
                 Optional<SequenceGroup> votedSequenceGroup = show.get().getSequenceGroups().stream()
                         .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
                         .findFirst();
                 if(votedSequenceGroup.isPresent()) {
-                    List<Sequence> sequencesInGroup = show.get().getSequences().stream()
-                            .filter(sequence -> StringUtils.equalsIgnoreCase(votedSequenceGroup.get().getName(), sequence.getGroup()))
-                            .sorted(Comparator.comparing(Sequence::getOrder))
-                            .toList();
-                    sequencesInGroup.forEach(sequence -> this.saveSequenceVote(show.get(), sequence, ipAddress));
-                    //PSA is handled when a winning vote is played
+                    this.saveSequenceGroupVote(show.get(), votedSequenceGroup.get(), ipAddress);
                     return true;
                 }
             }
@@ -267,8 +262,9 @@ public class GraphQLMutationService {
         this.showRepository.save(show);
     }
 
-    private void saveSequenceVote(Show show, Sequence votedSequence, String ipAddress) {
+    private void saveSequenceVote(Show show, Sequence votedSequence, String ipAddress, Boolean isGrouped) {
         Optional<Vote> sequenceVotes = show.getVotes().stream()
+                .filter(vote -> vote.getSequence() != null)
                 .filter(vote -> StringUtils.equalsIgnoreCase(vote.getSequence().getName(), votedSequence.getName()))
                 .findFirst();
         if(sequenceVotes.isPresent()) {
@@ -281,12 +277,38 @@ public class GraphQLMutationService {
                     .ownerVoted(false)
                     .lastVoteTime(LocalDateTime.now())
                     .viewersVoted(List.of(ipAddress))
+                    .votes(isGrouped ? 1001 : 1)
+                    .build());
+        }
+        if(!isGrouped) {
+            show.getStats().getVoting().add(Stat.Voting.builder()
+                    .dateTime(LocalDateTime.now())
+                    .name(votedSequence.getName())
+                    .build());
+        }
+        this.showRepository.save(show);
+    }
+
+    private void saveSequenceGroupVote(Show show, SequenceGroup votedSequenceGroup, String ipAddress) {
+        Optional<Vote> sequenceVotes = show.getVotes().stream()
+                .filter(vote -> StringUtils.equalsIgnoreCase(vote.getSequenceGroup().getName(), votedSequenceGroup.getName()))
+                .findFirst();
+        if(sequenceVotes.isPresent()) {
+            sequenceVotes.get().setVotes(sequenceVotes.get().getVotes() + 1);
+            sequenceVotes.get().getViewersVoted().add(ipAddress);
+            sequenceVotes.get().setLastVoteTime(LocalDateTime.now());
+        }else {
+            show.getVotes().add(Vote.builder()
+                    .sequenceGroup(votedSequenceGroup)
+                    .ownerVoted(false)
+                    .lastVoteTime(LocalDateTime.now())
+                    .viewersVoted(List.of(ipAddress))
                     .votes(1)
                     .build());
         }
         show.getStats().getVoting().add(Stat.Voting.builder()
                 .dateTime(LocalDateTime.now())
-                .name(votedSequence.getName())
+                .name(votedSequenceGroup.getName())
                 .build());
         this.showRepository.save(show);
     }

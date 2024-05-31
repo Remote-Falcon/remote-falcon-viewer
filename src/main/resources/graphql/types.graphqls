@@ -68,6 +68,7 @@ type Request {
 
 type Vote {
     sequence: Sequence
+    sequenceGroup: SequenceGroup
     votes: Int
     viewersVoted: [String]
     lastVoteTime: String
