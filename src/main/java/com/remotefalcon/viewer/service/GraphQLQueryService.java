@@ -6,6 +6,7 @@ import com.remotefalcon.library.models.*;
 import com.remotefalcon.viewer.repository.ShowRepository;
 import com.remotefalcon.viewer.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,7 @@ public class GraphQLQueryService {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             show.get().setSequences(this.processSequencesForViewer(show.get()));
-            if(show.get().getRequests().isEmpty()) {
+            if(CollectionUtils.isEmpty(show.get().getRequests())) {
                 show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
             }else {
                 this.updatePlayingNext(show.get());
