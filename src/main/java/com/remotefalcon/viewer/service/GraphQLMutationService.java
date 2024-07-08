@@ -10,6 +10,7 @@ import com.remotefalcon.viewer.util.ClientUtil;
 import com.remotefalcon.viewer.util.LocationUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -168,7 +169,10 @@ public class GraphQLMutationService {
     }
 
     private Boolean isQueueFull(Show show) {
-        return show.getRequests().size() >= show.getPreferences().getJukeboxDepth();
+        if(CollectionUtils.isNotEmpty(show.getRequests())) {
+            return show.getRequests().size() >= show.getPreferences().getJukeboxDepth();
+        }
+        return false;
     }
 
     private Boolean isViewerPresent(Show show, Float latitude, Float longitude) {
