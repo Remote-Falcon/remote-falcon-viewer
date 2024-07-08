@@ -250,6 +250,7 @@ public class GraphQLMutationService {
 
     private void saveSequenceRequest(Show show, Sequence requestedSequence, boolean isPsa) {
         if(CollectionUtils.isEmpty(show.getRequests())) {
+            show.setRequests(new ArrayList<>());
             show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
