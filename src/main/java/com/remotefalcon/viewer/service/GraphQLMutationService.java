@@ -106,7 +106,7 @@ public class GraphQLMutationService {
                         .name(requestedSequence.get().getName())
                         .build());
                 this.saveSequenceRequest(show.get(), requestedSequence.get(), false);
-                if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && !show.get().getPsaSequences().isEmpty()) {
+                if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                     this.handlePsaForJukebox(show.get());
                 }
                 return true;
@@ -127,7 +127,7 @@ public class GraphQLMutationService {
                         this.checkIfSequenceRequested(show.get(), sequence);
                         this.saveSequenceRequest(show.get(), sequence, false);
                     });
-                    if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && !show.get().getPsaSequences().isEmpty()) {
+                    if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                         this.handlePsaForJukebox(show.get());
                     }
                     return true;
@@ -245,7 +245,7 @@ public class GraphQLMutationService {
     }
 
     private void saveSequenceRequest(Show show, Sequence requestedSequence, boolean isPsa) {
-        if(show.getRequests().isEmpty()) {
+        if(CollectionUtils.isEmpty(show.getRequests())) {
             show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
