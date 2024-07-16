@@ -7,16 +7,10 @@ FROM openjdk:17-oracle
 COPY --from=build /usr/src/app/target/remote-falcon-viewer.jar /usr/app/remote-falcon-viewer.jar
 EXPOSE 8080
 
-ADD 'https://dtdg.co/latest-java-tracer' /usr/app/dd-java-agent.jar
+ADD 'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar' /usr/app/opentelemetry-javaagent.jar
 
-ARG DD_GIT_REPOSITORY_URL
-ARG DD_GIT_COMMIT_SHA
-ENV DD_GIT_REPOSITORY_URL=${DD_GIT_REPOSITORY_URL}
-ENV DD_GIT_COMMIT_SHA=${DD_GIT_COMMIT_SHA}
-
-RUN echo ${DD_GIT_REPOSITORY_URL}
-RUN echo ${DD_GIT_COMMIT_SHA}
-
-ENTRYPOINT exec java $JAVA_OPTS -javaagent:/usr/app/dd-java-agent.jar -Ddd.logs.injection=true \
-  -Ddd.service=remote-falcon-viewer -Ddd.profiling.enabled=true -XX:FlightRecorderOptions=stackdepth=256 \
-  -Ddd.version=${DD_GIT_COMMIT_SHA} -Ddd.dynamic.instrumentation.enabled=true -jar /usr/app/remote-falcon-viewer.jar
+ENTRYPOINT exec java $JAVA_OPTS -javaagent:/usr/app/opentelemetry-javaagent.jar \
+                                -Dotel.exporter.otlp.endpoint=http://signoz-otel-collector.platform.svc.cluster.local:4318 \
+                                -Dotel.resource.attributes=service.name=remote-falcon-viewer \
+                                -XX:FlightRecorderOptions=stackdepth=256 \
+                                -jar /usr/app/remote-falcon-viewer.jar

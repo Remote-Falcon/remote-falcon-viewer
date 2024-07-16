@@ -10,88 +10,65 @@ metadata:
   name: #{Application}#
   namespace: #{Namespace}#
   labels:
-    tags.datadoghq.com/env: #{Env}#
-    tags.datadoghq.com/service: #{Application}#
-    tags.datadoghq.com/version: #{Version}#
+    app: #{Application}#
 spec:
   replicas: #{Replicas}#
   selector:
     matchLabels:
       app: #{Application}#
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
-      annotations:
-        com.datadoghq.ad.logs: '[{"source": "java", "service": "remote-falcon-viewer", "log_processing_rules": [{"type": "multi_line", "name": "log_start_with_date", "pattern" : "\\d{4}-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])"}]}]'
       labels:
         app: #{Application}#
-        tags.datadoghq.com/env: #{Env}#
-        tags.datadoghq.com/service: #{Application}#
-        tags.datadoghq.com/version: #{Version}#
     spec:
-      volumes:
-        - hostPath:
-            path: /var/run/datadog/
-          name: apmsocketpath
       containers:
-      - name: #{Application}#
-        image: #{Image}#
-        resources:
-          requests:
-            memory: #{Requests.Memory}#
-            cpu: #{Requests.CPU}#
-          limits:
-            memory: #{Limits.Memory}#
-            cpu: #{Limits.CPU}#
-        volumeMounts:
-          - name: apmsocketpath
-            mountPath: /var/run/datadog
-        ports:
-        - containerPort: 8080
-        env:
-          - name: SPRING_PROFILES_ACTIVE
-            value: #{Env}#
-          - name: spring.data.mongodb.uri
-            valueFrom:
-              secretKeyRef:
-                name: remote-falcon-viewer
-                key: mongo-uri
-          - name: jwt.viewer
-            valueFrom:
-              secretKeyRef:
-                name: remote-falcon-viewer
-                key: jwt-viewer
-          - name: DD_ENV
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/env']
-          - name: DD_SERVICE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/service']
-          - name: DD_VERSION
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/version']
-          - name: DD_LOGS_INJECTION
-            value: "true"
-        startupProbe:
-          httpGet:
-            path: /remote-falcon-viewer/actuator/health
-            port: 8080
-          failureThreshold: 60
-        livenessProbe:
-          httpGet:
-            path: /remote-falcon-viewer/actuator/health
-            port: 8080
-          initialDelaySeconds: 0
-          timeoutSeconds: 10
-          failureThreshold: 60
-        readinessProbe:
-          httpGet:
-            path: /remote-falcon-viewer/actuator/health
-            port: 8080
-          failureThreshold: 60
-          initialDelaySeconds: 0
+        - name: #{Application}#
+          image: #{Image}#
+          resources:
+            requests:
+              memory: #{Requests.Memory}#
+              cpu: #{Requests.CPU}#
+            limits:
+              memory: #{Limits.Memory}#
+              cpu: #{Limits.CPU}#
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: #{Env}#
+            - name: spring.data.mongodb.uri
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: mongo-uri
+            - name: jwt.viewer
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: jwt-viewer
+          startupProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            failureThreshold: 60
+            initialDelaySeconds: 0
       imagePullSecrets:
         - name: remote-falcon-ghcr
 ---
@@ -103,7 +80,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 8080
+    - port: 8080
   selector:
     app: #{Application}#
 ---
@@ -116,13 +93,13 @@ metadata:
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
-  - host: #{Host}#
-    http:
-      paths:
-      - pathType: Prefix
-        path: /remote-falcon-viewer
-        backend:
-          service:
-            name: #{Application}#
-            port:
-              number: 8080
+    - host: #{Host}#
+      http:
+        paths:
+          - pathType: Prefix
+            path: /remote-falcon-viewer
+            backend:
+              service:
+                name: #{Application}#
+                port:
+                  number: 8080
