@@ -33,6 +33,7 @@ type Preference {
     sequencesPlayed: Int
     pageTitle: String
     pageIconUrl: String
+    selfHostedRedirectUrl: String
 }
 
 type Sequence {
