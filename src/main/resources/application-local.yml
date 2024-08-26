@@ -2,4 +2,4 @@ server:
   port: 8082
 
 client:
-  header: "X-Forwarded-For"
+  header: "CF-Connecting-IP"
