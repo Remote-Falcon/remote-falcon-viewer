@@ -51,6 +51,11 @@ spec:
                 secretKeyRef:
                   name: remote-falcon-viewer
                   key: jwt-viewer
+            - name: client.header
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: client-header
           startupProbe:
             httpGet:
               path: /remote-falcon-viewer/actuator/health
