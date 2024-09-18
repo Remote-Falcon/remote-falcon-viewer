@@ -30,15 +30,23 @@ public class GraphQLQueryService {
             }else {
                 this.updatePlayingNext(show.get());
             }
+            this.updatePlayingNow(show.get());
             return show.get();
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
+    private void updatePlayingNow(Show show) {
+        Optional<Sequence> playingNowSequence = show.getSequences().stream()
+                .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNow()))
+                .findFirst();
+        playingNowSequence.ifPresent(sequence -> show.setPlayingNow(sequence.getDisplayName()));
+    }
+
     private void updatePlayingNext(Show show) {
         Optional<Request> nextRequest = show.getRequests().stream()
                 .min(Comparator.comparing(Request::getPosition));
-        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getName()));
+        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getDisplayName()));
     }
 
     public String activeViewerPage() {
