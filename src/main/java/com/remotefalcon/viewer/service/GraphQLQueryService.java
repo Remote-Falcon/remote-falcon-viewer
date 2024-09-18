@@ -28,9 +28,10 @@ public class GraphQLQueryService {
             if(CollectionUtils.isEmpty(show.get().getRequests())) {
                 show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
             }else {
-                this.updatePlayingNext(show.get());
+                this.updatePlayingNextRequest(show.get());
             }
             this.updatePlayingNow(show.get());
+            this.updatePlayingNext(show.get());
             return show.get();
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
@@ -44,6 +45,13 @@ public class GraphQLQueryService {
     }
 
     private void updatePlayingNext(Show show) {
+        Optional<Sequence> playingNextSequence = show.getSequences().stream()
+                .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNext()))
+                .findFirst();
+        playingNextSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
+    }
+
+    private void updatePlayingNextRequest(Show show) {
         Optional<Request> nextRequest = show.getRequests().stream()
                 .min(Comparator.comparing(Request::getPosition));
         nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getDisplayName()));
