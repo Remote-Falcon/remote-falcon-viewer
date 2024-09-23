@@ -201,7 +201,7 @@ public class GraphQLMutationService {
 
     private Boolean hasViewerRequested(Show show, String ipAddress) {
         if(BooleanUtils.isTrue(show.getPreferences().getCheckIfRequested())) {
-            return show.getRequests().stream().anyMatch(request -> request.getViewersRequested().contains(ipAddress));
+            return show.getRequests().stream().anyMatch(request -> StringUtils.equalsIgnoreCase(ipAddress, request.getViewerRequested()));
         }
         return false;
     }
@@ -266,18 +266,18 @@ public class GraphQLMutationService {
             show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
-                    .viewersRequested(List.of(ipAddress))
+                    .viewerRequested(ipAddress)
                     .position(1)
                     .build());
         }else {
             Optional<Request> latestRequest = show.getRequests().stream()
                     .max(Comparator.comparing(Request::getPosition));
-            if(latestRequest.isPresent()) {
-                latestRequest.get().setSequence(requestedSequence);
-                latestRequest.get().setOwnerRequested(false);
-                latestRequest.get().setPosition(latestRequest.get().getPosition() + 1);
-                latestRequest.get().getViewersRequested().add(ipAddress);
-            }
+            latestRequest.ifPresent(request -> show.getRequests().add(Request.builder()
+                    .sequence(requestedSequence)
+                    .ownerRequested(false)
+                    .viewerRequested(ipAddress)
+                    .position(request.getPosition() + 1)
+                    .build()));
         }
         this.showRepository.save(show);
     }
