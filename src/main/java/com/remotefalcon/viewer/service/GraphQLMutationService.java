@@ -11,6 +11,7 @@ import com.remotefalcon.viewer.util.LocationUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -91,6 +92,10 @@ public class GraphQLMutationService {
     public Boolean addSequenceToQueue(String name, Float latitude, Float longitude) {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
+            String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
+            if(this.hasViewerRequested(show.get(), ipAddress)) {
+                throw new RuntimeException(StatusResponse.ALREADY_REQUESTED.name());
+            }
             if(this.isQueueFull(show.get())) {
                 throw new RuntimeException(StatusResponse.QUEUE_FULL.name());
             }
@@ -106,7 +111,7 @@ public class GraphQLMutationService {
                         .dateTime(LocalDateTime.now())
                         .name(requestedSequence.get().getName())
                         .build());
-                this.saveSequenceRequest(show.get(), requestedSequence.get(), false);
+                this.saveSequenceRequest(show.get(), requestedSequence.get(), ipAddress);
                 if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                     this.handlePsaForJukebox(show.get());
                 }
@@ -126,7 +131,7 @@ public class GraphQLMutationService {
                             .build());
                     sequencesInGroup.forEach(sequence -> {
                         this.checkIfSequenceRequested(show.get(), sequence);
-                        this.saveSequenceRequest(show.get(), sequence, false);
+                        this.saveSequenceRequest(show.get(), sequence, ipAddress);
                     });
                     if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                         this.handlePsaForJukebox(show.get());
@@ -188,8 +193,15 @@ public class GraphQLMutationService {
     }
 
     private Boolean hasViewerVoted(Show show, String ipAddress) {
-        if(show.getPreferences().getCheckIfVoted()) {
+        if(BooleanUtils.isTrue(show.getPreferences().getCheckIfVoted())) {
             return show.getVotes().stream().anyMatch(vote -> vote.getViewersVoted().contains(ipAddress));
+        }
+        return false;
+    }
+
+    private Boolean hasViewerRequested(Show show, String ipAddress) {
+        if(BooleanUtils.isTrue(show.getPreferences().getCheckIfRequested())) {
+            return show.getRequests().stream().anyMatch(request -> request.getViewersRequested().contains(ipAddress));
         }
         return false;
     }
@@ -208,7 +220,7 @@ public class GraphQLMutationService {
                         .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), nextPsaSequence.get().getName()))
                         .findFirst();
                 show.getPsaSequences().get(show.getPsaSequences().indexOf(nextPsaSequence.get())).setLastPlayed(LocalDateTime.now());
-                sequenceToAdd.ifPresent(sequence -> this.saveSequenceRequest(show, sequence, true));
+                sequenceToAdd.ifPresent(sequence -> this.saveSequenceRequest(show, sequence, "PSA"));
             }
         }
     }
@@ -248,22 +260,24 @@ public class GraphQLMutationService {
         return false;
     }
 
-    private void saveSequenceRequest(Show show, Sequence requestedSequence, boolean isPsa) {
+    private void saveSequenceRequest(Show show, Sequence requestedSequence, String ipAddress) {
         if(CollectionUtils.isEmpty(show.getRequests())) {
             show.setRequests(new ArrayList<>());
             show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
+                    .viewersRequested(List.of(ipAddress))
                     .position(1)
                     .build());
         }else {
             Optional<Request> latestRequest = show.getRequests().stream()
                     .max(Comparator.comparing(Request::getPosition));
-            latestRequest.ifPresent(request -> show.getRequests().add(Request.builder()
-                    .sequence(requestedSequence)
-                    .ownerRequested(false)
-                    .position(request.getPosition() + 1)
-                    .build()));
+            if(latestRequest.isPresent()) {
+                latestRequest.get().setSequence(requestedSequence);
+                latestRequest.get().setOwnerRequested(false);
+                latestRequest.get().setPosition(latestRequest.get().getPosition() + 1);
+                latestRequest.get().getViewersRequested().add(ipAddress);
+            }
         }
         this.showRepository.save(show);
     }
