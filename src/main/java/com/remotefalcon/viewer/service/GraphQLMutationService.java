@@ -93,6 +93,9 @@ public class GraphQLMutationService {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
+            if(this.isIpBlocked(ipAddress, show.get())) {
+                throw new RuntimeException(StatusResponse.NAUGHTY.name());
+            }
             if(this.hasViewerRequested(show.get(), ipAddress)) {
                 throw new RuntimeException(StatusResponse.ALREADY_REQUESTED.name());
             }
@@ -148,6 +151,9 @@ public class GraphQLMutationService {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
+            if(this.isIpBlocked(ipAddress, show.get())) {
+                throw new RuntimeException(StatusResponse.NAUGHTY.name());
+            }
             if(this.hasViewerVoted(show.get(), ipAddress)) {
                 throw new RuntimeException(StatusResponse.ALREADY_VOTED.name());
             }
@@ -171,6 +177,13 @@ public class GraphQLMutationService {
             }
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+    }
+
+    private boolean isIpBlocked(String ipAddress, Show show) {
+        if(CollectionUtils.isNotEmpty(show.getPreferences().getBlockedViewerIps())) {
+            return show.getPreferences().getBlockedViewerIps().contains(ipAddress);
+        }
+        return false;
     }
 
     private Boolean isQueueFull(Show show) {
