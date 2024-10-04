@@ -14,6 +14,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GraphQLMutationService {
     private final AuthUtil authUtil;
     private final ClientUtil clientUtil;
@@ -292,6 +294,7 @@ public class GraphQLMutationService {
                     .position(request.getPosition() + 1)
                     .build()));
         }
+        log.info("Successfully requested {} for {}", requestedSequence.getDisplayName(), show.getShowName());
         this.showRepository.save(show);
     }
 
