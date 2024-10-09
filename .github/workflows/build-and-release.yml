@@ -42,6 +42,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ steps.repository_string.outputs.lowercase }}:${{ github.sha }}
           build-args: |
             OTEL_OPTS=
+            OTEL_SERVICE_NAME=remote-falcon-viewer
+            OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+            OTEL_EXPORTER_OTLP_PROTOCOL=grpc
   release-production:
     name: Release Production
     environment: prod
