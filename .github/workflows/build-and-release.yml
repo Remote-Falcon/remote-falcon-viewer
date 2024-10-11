@@ -41,11 +41,7 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ steps.repository_string.outputs.lowercase }}:${{ github.sha }}
           build-args: |
-            OTEL_OPTS=-javaagent:/usr/app/grafana-opentelemetry-java.jar
-            OTEL_EXPORTER_OTLP_ENDPOINT=http://grafana-k8s-monitoring-alloy.remote-falcon-grafana.svc.cluster.local:4317
-            OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-            OTEL_SERVICE_NAME=remote-falcon-viewer
-            OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production
+            OTEL_OPTS=-javaagent:/usr/app/dd-java-agent.jar -Ddd.env=prod -Ddd.service=remote-falcon-viewer
   release-production:
     name: Release Production
     environment: prod

@@ -144,10 +144,8 @@ public class GraphQLMutationService {
                     return true;
                 }
             }
-            log.error("Failed to request {}: {}", name, show.get().getShowName());
             throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
         }
-        log.error("Failed to request {}", name);
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
     }
 

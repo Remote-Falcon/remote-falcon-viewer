@@ -59,7 +59,6 @@ public class AuthUtil {
       try {
         token = authorization.split(" ")[1];
       }catch (Exception e) {
-        log.error("Error getting token from request");
         throw new RuntimeException(StatusResponse.INVALID_JWT.name());
       }
     }
