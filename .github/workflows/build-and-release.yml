@@ -67,9 +67,9 @@ jobs:
           Env: prod
           Replicas: 4
           Image: ${{ env.REGISTRY }}/${{ steps.repository_string.outputs.lowercase }}:${{ github.sha }}
-          Requests.Memory: 5Gi
+          Requests.Memory: 4Gi
           Requests.CPU: 750m
-          Limits.Memory: 6Gi
+          Limits.Memory: 5Gi
           Limits.CPU: 1000m
           Host: remotefalcon.com
 
