@@ -8,6 +8,7 @@ import com.remotefalcon.viewer.repository.ShowRepository;
 import com.remotefalcon.viewer.util.AuthUtil;
 import com.remotefalcon.viewer.util.ClientUtil;
 import com.remotefalcon.viewer.util.LocationUtil;
+import com.remotefalcon.viewer.util.LogConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
@@ -116,6 +117,7 @@ public class GraphQLMutationService {
                         .dateTime(LocalDateTime.now())
                         .name(requestedSequence.get().getName())
                         .build());
+                log.info("{}: {}", LogConstants.SEQUENCE_REQUESTED_SUCCESS, requestedSequence.get().getDisplayName());
                 this.saveSequenceRequest(show.get(), requestedSequence.get(), ipAddress);
                 if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                     this.handlePsaForJukebox(show.get());
@@ -134,6 +136,7 @@ public class GraphQLMutationService {
                             .dateTime(LocalDateTime.now())
                             .name(requestedSequenceGroup.get().getName())
                             .build());
+                    log.info("{}: {}", LogConstants.SEQUENCE_GROUP_REQUESTED_SUCCESS, requestedSequenceGroup.get().getName());
                     sequencesInGroup.forEach(sequence -> {
                         this.checkIfSequenceRequested(show.get(), sequence);
                         this.saveSequenceRequest(show.get(), sequence, ipAddress);
@@ -321,6 +324,7 @@ public class GraphQLMutationService {
                     .name(votedSequence.getName())
                     .build());
         }
+        log.info("{}: {}", LogConstants.SEQUENCE_VOTED_SUCCESS, votedSequence.getDisplayName());
         this.showRepository.save(show);
     }
 
@@ -346,6 +350,7 @@ public class GraphQLMutationService {
                 .dateTime(LocalDateTime.now())
                 .name(votedSequenceGroup.getName())
                 .build());
+        log.info("{}: {}", LogConstants.SEQUENCE_GROUP_VOTED_SUCCESS, votedSequenceGroup.getName());
         this.showRepository.save(show);
     }
 
