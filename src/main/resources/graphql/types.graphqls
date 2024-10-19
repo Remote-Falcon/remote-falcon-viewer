@@ -1,5 +1,6 @@
 type Show {
     showSubdomain: String
+    showName: String
 
     preferences: Preference
     sequences: [Sequence]
