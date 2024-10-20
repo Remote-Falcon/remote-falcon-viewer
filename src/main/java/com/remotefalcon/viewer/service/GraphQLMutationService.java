@@ -193,7 +193,7 @@ public class GraphQLMutationService {
 
     private Boolean isQueueFull(Show show) {
         if(CollectionUtils.isNotEmpty(show.getRequests())) {
-            return show.getRequests().size() >= show.getPreferences().getJukeboxDepth();
+            return show.getPreferences().getJukeboxDepth() != 0 && show.getRequests().size() >= show.getPreferences().getJukeboxDepth();
         }
         return false;
     }

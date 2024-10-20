@@ -6,6 +6,7 @@ import com.remotefalcon.library.models.*;
 import com.remotefalcon.viewer.repository.ShowRepository;
 import com.remotefalcon.viewer.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GraphQLQueryService {
     private final AuthUtil authUtil;
     private final ShowRepository showRepository;
@@ -24,7 +26,6 @@ public class GraphQLQueryService {
     public Show getShow() {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
-            show.get().setSequences(this.processSequencesForViewer(show.get()));
             if(CollectionUtils.isEmpty(show.get().getRequests())) {
                 show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
             }else {
@@ -32,6 +33,7 @@ public class GraphQLQueryService {
             }
             this.updatePlayingNow(show.get());
             this.updatePlayingNext(show.get());
+            show.get().setSequences(this.processSequencesForViewer(show.get()));
             return show.get();
         }
         throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
