@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface ShowRepository extends MongoRepository<Show, String> {
     Optional<Show> findByShowSubdomain(String showSubdomain);
+    Optional<Show> findByApiAccessApiAccessToken(String apiAccessToken);
 }

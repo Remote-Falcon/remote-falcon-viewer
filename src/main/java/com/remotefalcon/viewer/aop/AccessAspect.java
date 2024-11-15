@@ -7,6 +7,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -21,6 +22,15 @@ public class AccessAspect {
   public Object isJwtValid(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
     HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
     if(this.authUtil.isJwtValid(request)) {
+      return proceedingJoinPoint.proceed();
+    }
+    throw new RuntimeException(StatusResponse.INVALID_JWT.name());
+  }
+
+  @Around("@annotation(RequiresAPIAccess)")
+  public Object isApiJwtValid(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+    if(this.authUtil.isApiJwtValid(request)) {
       return proceedingJoinPoint.proceed();
     }
     throw new RuntimeException(StatusResponse.INVALID_JWT.name());

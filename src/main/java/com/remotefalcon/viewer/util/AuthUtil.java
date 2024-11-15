@@ -6,19 +6,26 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.remotefalcon.library.documents.Show;
 import com.remotefalcon.viewer.dto.TokenDTO;
 import com.remotefalcon.library.enums.StatusResponse;
+import com.remotefalcon.viewer.repository.ShowRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuthUtil {
+  private final ShowRepository showRepository;
+
   @Value("${jwt.viewer}")
   String jwtSignKey;
 
@@ -49,6 +56,28 @@ public class AuthUtil {
       return true;
     } catch (JWTVerificationException e) {
       throw new RuntimeException(StatusResponse.INVALID_JWT.name());
+    }
+  }
+
+  public Boolean isApiJwtValid(HttpServletRequest httpServletRequest) throws JWTVerificationException {
+    try {
+      String token = this.getTokenFromRequest(httpServletRequest);
+      if (StringUtils.isEmpty(token)) {
+        return false;
+      }
+      DecodedJWT decodedJWT = JWT.decode(token);
+      String accessToken = decodedJWT.getClaims().get("accessToken").asString();
+      Optional<Show> show = this.showRepository.findByApiAccessApiAccessToken(accessToken);
+      if(show.isEmpty()) {
+        return false;
+      }
+      Algorithm algorithm = Algorithm.HMAC256(show.get().getApiAccess().getApiAccessSecret());
+      JWTVerifier verifier = JWT.require(algorithm).build();
+      verifier.verify(token);
+      this.tokenDTO = TokenDTO.builder().showSubdomain(show.get().getShowSubdomain()).build();
+      return true;
+    } catch (JWTVerificationException e) {
+      return false;
     }
   }
 
