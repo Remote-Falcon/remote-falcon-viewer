@@ -50,7 +50,11 @@ public class GraphQLQueryService {
         Optional<Sequence> playingNextSequence = show.getSequences().stream()
                 .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNext()))
                 .findFirst();
+        Optional<Sequence> playingNextScheduledSequence = show.getSequences().stream()
+                .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNextFromSchedule()))
+                .findFirst();
         playingNextSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
+        playingNextScheduledSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
     }
 
     private void updatePlayingNextRequest(Show show) {
