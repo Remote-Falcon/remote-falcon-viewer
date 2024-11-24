@@ -26,11 +26,6 @@ public class GraphQLQueryService {
     public Show getShow() {
         Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
-            if(CollectionUtils.isEmpty(show.get().getRequests())) {
-                show.get().setPlayingNext(show.get().getPlayingNextFromSchedule());
-            }else {
-                this.updatePlayingNextRequest(show.get());
-            }
             this.updatePlayingNow(show.get());
             this.updatePlayingNext(show.get());
             show.get().setSequences(this.processSequencesForViewer(show.get()));
@@ -47,23 +42,18 @@ public class GraphQLQueryService {
     }
 
     private void updatePlayingNext(Show show) {
-        Optional<Sequence> playingNextSequence = show.getSequences().stream()
-                .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNext()))
-                .findFirst();
-        Optional<Sequence> playingNextScheduledSequence = show.getSequences().stream()
-                .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNextFromSchedule()))
-                .findFirst();
-        if(playingNextSequence.isPresent()) {
-            show.setPlayingNext(playingNextSequence.get().getDisplayName());
-        }else {
-            playingNextScheduledSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
-        }
-    }
-
-    private void updatePlayingNextRequest(Show show) {
+        //Get next from request list
         Optional<Request> nextRequest = show.getRequests().stream()
                 .min(Comparator.comparing(Request::getPosition));
         nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getDisplayName()));
+
+        //Get next from schedule if next request is empty
+        if(nextRequest.isEmpty()) {
+            Optional<Sequence> playingNextScheduledSequence = show.getSequences().stream()
+                    .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNextFromSchedule()))
+                    .findFirst();
+            playingNextScheduledSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
+        }
     }
 
     public String activeViewerPage() {
