@@ -7,7 +7,6 @@ import com.remotefalcon.viewer.repository.ShowRepository;
 import com.remotefalcon.viewer.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -38,21 +37,30 @@ public class GraphQLQueryService {
         Optional<Sequence> playingNowSequence = show.getSequences().stream()
                 .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNow()))
                 .findFirst();
-        playingNowSequence.ifPresent(sequence -> show.setPlayingNow(sequence.getDisplayName()));
+        playingNowSequence.ifPresent(sequence -> {
+          show.setPlayingNow(sequence.getDisplayName());
+          show.setPlayingNowSequence(sequence);
+        });
     }
 
     private void updatePlayingNext(Show show) {
         //Get next from request list
         Optional<Request> nextRequest = show.getRequests().stream()
                 .min(Comparator.comparing(Request::getPosition));
-        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getDisplayName()));
+        nextRequest.ifPresent(request -> {
+          show.setPlayingNext(request.getSequence().getDisplayName());
+          show.setPlayingNextSequence(request.getSequence());
+        });
 
         //Get next from schedule if next request is empty
         if(nextRequest.isEmpty()) {
             Optional<Sequence> playingNextScheduledSequence = show.getSequences().stream()
                     .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), show.getPlayingNextFromSchedule()))
                     .findFirst();
-            playingNextScheduledSequence.ifPresent(sequence -> show.setPlayingNext(sequence.getDisplayName()));
+            playingNextScheduledSequence.ifPresent(sequence -> {
+              show.setPlayingNext(sequence.getDisplayName());
+              show.setPlayingNextSequence(sequence);
+            });
         }
     }
 

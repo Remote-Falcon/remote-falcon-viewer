@@ -1,11 +1,9 @@
 package com.remotefalcon.viewer.controller;
 
 import com.remotefalcon.viewer.aop.RequiresAPIAccess;
-import com.remotefalcon.viewer.aop.RequiresAccess;
 import com.remotefalcon.viewer.dto.RequestVoteRequest;
 import com.remotefalcon.viewer.dto.RequestVoteResponse;
 import com.remotefalcon.viewer.service.GraphQLMutationService;
-import com.remotefalcon.viewer.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 public class ViewerController {
-    private final AuthUtil authUtil;
     private final GraphQLMutationService graphQLMutationService;
 
     @PostMapping(value = "/addSequenceToQueue")

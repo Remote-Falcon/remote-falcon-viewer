@@ -353,10 +353,4 @@ public class GraphQLMutationService {
         log.info("{}: {}", LogConstants.SEQUENCE_GROUP_VOTED_SUCCESS, votedSequenceGroup.getName());
         this.showRepository.save(show);
     }
-
-    private void updatePlayingNext(Show show) {
-        Optional<Request> nextRequest = show.getRequests().stream()
-                .min(Comparator.comparing(Request::getPosition));
-        nextRequest.ifPresent(request -> show.setPlayingNext(request.getSequence().getName()));
-    }
 }

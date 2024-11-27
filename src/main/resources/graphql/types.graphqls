@@ -11,6 +11,8 @@ type Show {
     activeViewers: [ActiveViewer]
     playingNow: String
     playingNext: String
+    playingNowSequence: Sequence
+    playingNextSequence: Sequence
     playingNextFromSchedule: String
 }
 
