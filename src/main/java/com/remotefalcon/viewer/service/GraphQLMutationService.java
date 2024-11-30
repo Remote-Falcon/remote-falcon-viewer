@@ -1,27 +1,34 @@
 package com.remotefalcon.viewer.service;
 
-import com.remotefalcon.library.documents.Show;
-import com.remotefalcon.library.enums.LocationCheckMethod;
-import com.remotefalcon.library.enums.StatusResponse;
-import com.remotefalcon.library.models.*;
-import com.remotefalcon.viewer.repository.ShowRepository;
-import com.remotefalcon.viewer.util.AuthUtil;
-import com.remotefalcon.viewer.util.ClientUtil;
-import com.remotefalcon.viewer.util.LocationUtil;
-import com.remotefalcon.viewer.util.LogConstants;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
+import com.remotefalcon.library.documents.Show;
+import com.remotefalcon.library.enums.LocationCheckMethod;
+import com.remotefalcon.library.enums.StatusResponse;
+import com.remotefalcon.library.models.ActiveViewer;
+import com.remotefalcon.library.models.PsaSequence;
+import com.remotefalcon.library.models.Request;
+import com.remotefalcon.library.models.Sequence;
+import com.remotefalcon.library.models.SequenceGroup;
+import com.remotefalcon.library.models.Stat;
+import com.remotefalcon.library.models.Vote;
+import com.remotefalcon.viewer.repository.ShowRepository;
+import com.remotefalcon.viewer.util.AuthUtil;
+import com.remotefalcon.viewer.util.ClientUtil;
+import com.remotefalcon.viewer.util.LocationUtil;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -117,7 +124,6 @@ public class GraphQLMutationService {
                         .dateTime(LocalDateTime.now())
                         .name(requestedSequence.get().getName())
                         .build());
-                log.info("{}: {}", LogConstants.SEQUENCE_REQUESTED_SUCCESS, requestedSequence.get().getDisplayName());
                 this.saveSequenceRequest(show.get(), requestedSequence.get(), ipAddress);
                 if(show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa() && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
                     this.handlePsaForJukebox(show.get());
@@ -136,7 +142,6 @@ public class GraphQLMutationService {
                             .dateTime(LocalDateTime.now())
                             .name(requestedSequenceGroup.get().getName())
                             .build());
-                    log.info("{}: {}", LogConstants.SEQUENCE_GROUP_REQUESTED_SUCCESS, requestedSequenceGroup.get().getName());
                     sequencesInGroup.forEach(sequence -> {
                         this.checkIfSequenceRequested(show.get(), sequence);
                         this.saveSequenceRequest(show.get(), sequence, ipAddress);
@@ -324,7 +329,6 @@ public class GraphQLMutationService {
                     .name(votedSequence.getName())
                     .build());
         }
-        log.info("{}: {}", LogConstants.SEQUENCE_VOTED_SUCCESS, votedSequence.getDisplayName());
         this.showRepository.save(show);
     }
 
@@ -350,7 +354,6 @@ public class GraphQLMutationService {
                 .dateTime(LocalDateTime.now())
                 .name(votedSequenceGroup.getName())
                 .build());
-        log.info("{}: {}", LogConstants.SEQUENCE_GROUP_VOTED_SUCCESS, votedSequenceGroup.getName());
         this.showRepository.save(show);
     }
 }
