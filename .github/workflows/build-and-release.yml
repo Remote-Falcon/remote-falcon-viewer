@@ -65,11 +65,11 @@ jobs:
           Application: remote-falcon-viewer
           Version: ${{ github.sha }}
           Env: prod
-          Replicas: 4
+          Replicas: 8
           Image: ${{ env.REGISTRY }}/${{ steps.repository_string.outputs.lowercase }}:${{ github.sha }}
-          Requests.Memory: 2000Mi
+          Requests.Memory: 4000Mi
           Requests.CPU: 1500m
-          Limits.Memory: 2500Mi
+          Limits.Memory: 6000Mi
           Limits.CPU: 2000m
           Host: remotefalcon.com
 
