@@ -3,6 +3,7 @@ package com.remotefalcon.viewer.service;
 import com.remotefalcon.library.documents.Show;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.*;
+import com.remotefalcon.viewer.dto.TokenDTO;
 import com.remotefalcon.viewer.repository.ShowRepository;
 import com.remotefalcon.viewer.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,8 @@ public class GraphQLQueryService {
     private final ShowRepository showRepository;
 
     public Show getShow() {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             this.updatePlayingNow(show.get());
             this.updatePlayingNext(show.get());
@@ -65,7 +67,8 @@ public class GraphQLQueryService {
     }
 
     public String activeViewerPage() {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent() && show.get().getPages() != null) {
             Optional<Page> activeViewerPage = show.get().getPages().stream().filter(Page::getActive).findFirst();
             if(activeViewerPage.isPresent()) {

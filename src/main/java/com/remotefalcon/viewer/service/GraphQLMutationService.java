@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import com.remotefalcon.viewer.dto.TokenDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +41,8 @@ public class GraphQLMutationService {
     private final HttpServletRequest httpServletRequest;
 
     public Boolean insertViewerPageStats(LocalDateTime date) {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
             if(!StringUtils.equalsIgnoreCase(show.get().getLastLoginIp(), ipAddress)) {
@@ -57,7 +59,8 @@ public class GraphQLMutationService {
     }
 
     public Boolean updateActiveViewers() {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
             List<String> existingIpAddresses = show.get().getActiveViewers().stream().map(ActiveViewer::getIpAddress).toList();
@@ -80,7 +83,8 @@ public class GraphQLMutationService {
     }
 
     public Boolean updatePlayingNow(String playingNow) {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             show.get().setPlayingNow(playingNow);
             this.showRepository.save(show.get());
@@ -90,7 +94,8 @@ public class GraphQLMutationService {
     }
 
     public Boolean updatePlayingNext(String playingNext) {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             show.get().setPlayingNext(playingNext);
             this.showRepository.save(show.get());
@@ -100,7 +105,8 @@ public class GraphQLMutationService {
     }
 
     public Boolean addSequenceToQueue(String name, Float latitude, Float longitude) {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
             if(this.isIpBlocked(ipAddress, show.get())) {
@@ -158,7 +164,8 @@ public class GraphQLMutationService {
     }
 
     public Boolean voteForSequence(String name, Float latitude, Float longitude) {
-        Optional<Show> show = this.showRepository.findByShowSubdomain(authUtil.tokenDTO.getShowSubdomain());
+        TokenDTO tokenDTO = this.authUtil.getJwtPayload();
+        Optional<Show> show = this.showRepository.findByShowSubdomain(tokenDTO.getShowSubdomain());
         if(show.isPresent()) {
             String ipAddress = this.clientUtil.getClientIp(httpServletRequest);
             if(this.isIpBlocked(ipAddress, show.get())) {

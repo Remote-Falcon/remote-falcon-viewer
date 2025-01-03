@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
 
@@ -28,10 +30,9 @@ public class AuthUtil {
   @Value("${jwt.viewer}")
   String jwtSignKey;
 
-  public TokenDTO tokenDTO;
-
-  public TokenDTO getJwtPayload(String token) {
+  public TokenDTO getJwtPayload() {
     try {
+      String token = this.getTokenFromRequest();
       DecodedJWT decodedJWT = JWT.decode(token);
       String showSubdomain = decodedJWT.getClaims().get("showSubdomain").asString();
       return TokenDTO.builder()
@@ -42,25 +43,24 @@ public class AuthUtil {
     }
   }
 
-  public Boolean isJwtValid(HttpServletRequest httpServletRequest) throws JWTVerificationException {
+  public Boolean isJwtValid() throws JWTVerificationException {
     try {
-      String token = this.getTokenFromRequest(httpServletRequest);
+      String token = this.getTokenFromRequest();
       if (StringUtils.isEmpty(token)) {
         throw new RuntimeException(StatusResponse.INVALID_JWT.name());
       }
       Algorithm algorithm = Algorithm.HMAC256(jwtSignKey);
       JWTVerifier verifier = JWT.require(algorithm).withIssuer("remotefalcon").build();
       verifier.verify(token);
-      this.tokenDTO = getJwtPayload(token);
       return true;
     } catch (JWTVerificationException e) {
       throw new RuntimeException(StatusResponse.INVALID_JWT.name());
     }
   }
 
-  public Boolean isApiJwtValid(HttpServletRequest httpServletRequest) throws JWTVerificationException {
+  public Boolean isApiJwtValid() throws JWTVerificationException {
     try {
-      String token = this.getTokenFromRequest(httpServletRequest);
+      String token = this.getTokenFromRequest();
       if (StringUtils.isEmpty(token)) {
         return false;
       }
@@ -73,16 +73,16 @@ public class AuthUtil {
       Algorithm algorithm = Algorithm.HMAC256(show.get().getApiAccess().getApiAccessSecret());
       JWTVerifier verifier = JWT.require(algorithm).build();
       verifier.verify(token);
-      this.tokenDTO = TokenDTO.builder().showSubdomain(show.get().getShowSubdomain()).build();
       return true;
     } catch (JWTVerificationException e) {
       return false;
     }
   }
 
-  private String getTokenFromRequest(HttpServletRequest httpServletRequest) {
+  private String getTokenFromRequest() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
     String token = "";
-    final String authorization = httpServletRequest.getHeader("Authorization");
+    final String authorization = request.getHeader("Authorization");
     if (authorization != null && authorization.toLowerCase().startsWith("bearer")) {
       try {
         token = authorization.split(" ")[1];

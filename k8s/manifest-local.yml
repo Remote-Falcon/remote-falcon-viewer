@@ -1,0 +1,109 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: remote-falcon
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remote-falcon-viewer
+  namespace: remote-falcon
+  labels:
+    app: remote-falcon-viewer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: remote-falcon-viewer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: remote-falcon-viewer
+    spec:
+      containers:
+        - name: remote-falcon-viewer
+          imagePullPolicy: Never
+          image:  remote-falcon-viewer:latest
+          resources:
+            requests:
+              memory: 2000Mi
+              cpu: 500m
+            limits:
+              memory: 2500Mi
+              cpu: 750m
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: test
+            - name: spring.data.mongodb.uri
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: mongo-uri
+            - name: jwt.viewer
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: jwt-viewer
+            - name: client.header
+              valueFrom:
+                secretKeyRef:
+                  name: remote-falcon-viewer
+                  key: client-header
+          startupProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /remote-falcon-viewer/actuator/health
+              port: 8080
+            failureThreshold: 60
+            initialDelaySeconds: 0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remote-falcon-viewer
+  namespace: remote-falcon
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+  selector:
+    app: remote-falcon-viewer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: remote-falcon-viewer
+  namespace: remote-falcon
+  annotations:
+    spec.ingressClassName: nginx
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - pathType: Prefix
+            path: /remote-falcon-viewer
+            backend:
+              service:
+                name: remote-falcon-viewer
+                port:
+                  number: 8080

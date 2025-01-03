@@ -19,8 +19,7 @@ public class AccessAspect {
 
   @Around("@annotation(RequiresAccess)")
   public Object isJwtValid(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
-    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-    if(this.authUtil.isJwtValid(request)) {
+    if(this.authUtil.isJwtValid()) {
       return proceedingJoinPoint.proceed();
     }
     throw new RuntimeException(StatusResponse.INVALID_JWT.name());
@@ -28,8 +27,7 @@ public class AccessAspect {
 
   @Around("@annotation(RequiresAPIAccess)")
   public Object isApiJwtValid(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
-    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-    if(this.authUtil.isApiJwtValid(request)) {
+    if(this.authUtil.isApiJwtValid()) {
       return proceedingJoinPoint.proceed();
     }
     throw new RuntimeException(StatusResponse.INVALID_JWT.name());
