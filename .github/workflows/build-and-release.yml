@@ -65,12 +65,12 @@ jobs:
           Application: remote-falcon-viewer
           Version: ${{ github.sha }}
           Env: prod
-          Replicas: 8
+          Replicas: 2
           Image: ${{ env.REGISTRY }}/${{ steps.repository_string.outputs.lowercase }}:${{ github.sha }}
-          Requests.Memory: 4000Mi
-          Requests.CPU: 1500m
-          Limits.Memory: 6000Mi
-          Limits.CPU: 2000m
+          Requests.Memory: 1000Mi
+          Requests.CPU: 500m
+          Limits.Memory: 1500Mi
+          Limits.CPU: 750m
           Host: remotefalcon.com
 
       - name: Install doctl
