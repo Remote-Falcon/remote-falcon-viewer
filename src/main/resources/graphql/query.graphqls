@@ -1,4 +1,0 @@
-type Query {
-    getShow: Show
-    activeViewerPage: String
-}

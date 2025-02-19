@@ -1,5 +1,0 @@
-server:
-  port: 8082
-
-client:
-  header: "CF-Connecting-IP"
