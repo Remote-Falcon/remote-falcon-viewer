@@ -99,6 +99,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: #{Application}#
+  namespace: #{Namespace}#
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
