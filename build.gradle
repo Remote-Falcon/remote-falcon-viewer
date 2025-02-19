@@ -19,7 +19,6 @@ dependencies {
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-opentelemetry'
     implementation 'io.quarkus:quarkus-undertow'
-    implementation 'io.quarkus:quarkus-cors'
     implementation 'org.apache.commons:commons-lang3:3.x'
     implementation 'commons-collections:commons-collections:3.2.2'
     implementation ('com.github.Remote-Falcon:remote-falcon-library:3e035c7617') {
