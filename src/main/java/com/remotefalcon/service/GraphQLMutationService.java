@@ -1,5 +1,6 @@
 package com.remotefalcon.service;
 
+import com.remotefalcon.exception.CustomerGraphQLExceptionResolver;
 import com.remotefalcon.library.enums.LocationCheckMethod;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.*;
@@ -7,6 +8,7 @@ import com.remotefalcon.library.quarkus.entity.Show;
 import com.remotefalcon.repository.ShowRepository;
 import com.remotefalcon.util.ClientUtil;
 import com.remotefalcon.util.LocationUtil;
+import graphql.GraphQLException;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -45,7 +47,7 @@ public class GraphQLMutationService {
             }
             return true;
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updateActiveViewers(String showSubdomain) {
@@ -69,7 +71,7 @@ public class GraphQLMutationService {
             }
             return true;
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updatePlayingNow(String showSubdomain, String playingNow) {
@@ -80,7 +82,7 @@ public class GraphQLMutationService {
             this.showRepository.persistOrUpdate(existingShow);
             return true;
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updatePlayingNext(String showSubdomain, String playingNext) {
@@ -91,7 +93,7 @@ public class GraphQLMutationService {
             this.showRepository.persistOrUpdate(existingShow);
             return true;
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean addSequenceToQueue(String showSubdomain, String name, Double latitude, Double longitude) {
@@ -100,16 +102,16 @@ public class GraphQLMutationService {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
             if(this.isIpBlocked(clientIp, show.get())) {
-                throw new RuntimeException(StatusResponse.NAUGHTY.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
             if(this.hasViewerRequested(show.get(), clientIp)) {
-                throw new RuntimeException(StatusResponse.ALREADY_REQUESTED.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.ALREADY_REQUESTED.name());
             }
             if(this.isQueueFull(existingShow)) {
-                throw new RuntimeException(StatusResponse.QUEUE_FULL.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.QUEUE_FULL.name());
             }
             if(!this.isViewerPresent(existingShow, latitude, longitude)) {
-                throw new RuntimeException(StatusResponse.INVALID_LOCATION.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
             }
             Optional<Sequence> requestedSequence = show.get().getSequences().stream()
                     .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
@@ -148,9 +150,9 @@ public class GraphQLMutationService {
                     return true;
                 }
             }
-            throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+            throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean voteForSequence(String showSubdomain, String name, Double latitude, Double longitude) {
@@ -159,13 +161,13 @@ public class GraphQLMutationService {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
             if(this.isIpBlocked(clientIp, existingShow)) {
-                throw new RuntimeException(StatusResponse.NAUGHTY.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
             if(this.hasViewerVoted(existingShow, clientIp)) {
-                throw new RuntimeException(StatusResponse.ALREADY_VOTED.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
             }
             if(!this.isViewerPresent(existingShow, latitude, longitude)) {
-                throw new RuntimeException(StatusResponse.INVALID_LOCATION.name());
+                throw new CustomerGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
             }
             Optional<Sequence> requestedSequence = existingShow.getSequences().stream()
                     .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
@@ -183,7 +185,7 @@ public class GraphQLMutationService {
                 }
             }
         }
-        throw new RuntimeException(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     private boolean isIpBlocked(String ipAddress, Show show) {
@@ -228,13 +230,13 @@ public class GraphQLMutationService {
 
     private void checkIfSequenceRequested(Show show, Sequence requestedSequence) {
         if(this.isRequestedSequencePlayingNow(show, requestedSequence)) {
-            throw new RuntimeException(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
         if(this.isRequestedSequencePlayingNext(show, requestedSequence)) {
-            throw new RuntimeException(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
         if(this.isRequestedSequenceWithinRequestLimit(show, requestedSequence)) {
-            throw new RuntimeException(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
     }
 

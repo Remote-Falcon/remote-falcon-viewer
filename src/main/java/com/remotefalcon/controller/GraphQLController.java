@@ -72,7 +72,7 @@ public class GraphQLController {
     }
 
     @Query
-    @Name("getShow")
+    @Name("getActiveViewerPage")
     @Description("Get Active Viewer Page")
     public String activeViewerPage(String showSubdomain) {
         return graphQLQueryService.activeViewerPage(showSubdomain);
