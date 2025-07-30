@@ -1,6 +1,6 @@
 package com.remotefalcon.service;
 
-import com.remotefalcon.exception.CustomerGraphQLExceptionResolver;
+import com.remotefalcon.exception.CustomGraphQLExceptionResolver;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Sequence;
@@ -122,6 +122,6 @@ public class GraphQLQueryService {
             }
             return "";
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 }
