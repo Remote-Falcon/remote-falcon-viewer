@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 @Provider
-public class CustomerGraphQLExceptionResolver extends RuntimeException implements GraphQLError {
-    public CustomerGraphQLExceptionResolver(String errorMessage) {
+public class CustomGraphQLExceptionResolver extends RuntimeException implements GraphQLError {
+    public CustomGraphQLExceptionResolver(String errorMessage) {
         super(errorMessage);
     }
 

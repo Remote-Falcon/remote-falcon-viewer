@@ -1,6 +1,6 @@
 package com.remotefalcon.service;
 
-import com.remotefalcon.exception.CustomerGraphQLExceptionResolver;
+import com.remotefalcon.exception.CustomGraphQLExceptionResolver;
 import com.remotefalcon.library.enums.LocationCheckMethod;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.*;
@@ -8,7 +8,6 @@ import com.remotefalcon.library.quarkus.entity.Show;
 import com.remotefalcon.repository.ShowRepository;
 import com.remotefalcon.util.ClientUtil;
 import com.remotefalcon.util.LocationUtil;
-import graphql.GraphQLException;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -47,7 +46,7 @@ public class GraphQLMutationService {
             }
             return true;
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updateActiveViewers(String showSubdomain) {
@@ -71,7 +70,7 @@ public class GraphQLMutationService {
             }
             return true;
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updatePlayingNow(String showSubdomain, String playingNow) {
@@ -82,7 +81,7 @@ public class GraphQLMutationService {
             this.showRepository.persistOrUpdate(existingShow);
             return true;
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean updatePlayingNext(String showSubdomain, String playingNext) {
@@ -93,7 +92,7 @@ public class GraphQLMutationService {
             this.showRepository.persistOrUpdate(existingShow);
             return true;
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean addSequenceToQueue(String showSubdomain, String name, Double latitude, Double longitude) {
@@ -101,17 +100,20 @@ public class GraphQLMutationService {
         if(show.isPresent()) {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
+            if(StringUtils.isEmpty(clientIp) && shouldCheckIfVoted(existingShow)) {
+                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
+            }
             if(this.isIpBlocked(clientIp, show.get())) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
             if(this.hasViewerRequested(show.get(), clientIp)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.ALREADY_REQUESTED.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_REQUESTED.name());
             }
             if(this.isQueueFull(existingShow)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.QUEUE_FULL.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.QUEUE_FULL.name());
             }
             if(!this.isViewerPresent(existingShow, latitude, longitude)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
             }
             Optional<Sequence> requestedSequence = show.get().getSequences().stream()
                     .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
@@ -150,9 +152,9 @@ public class GraphQLMutationService {
                     return true;
                 }
             }
-            throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+            throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     public Boolean voteForSequence(String showSubdomain, String name, Double latitude, Double longitude) {
@@ -160,14 +162,17 @@ public class GraphQLMutationService {
         if(show.isPresent()) {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
+            if(StringUtils.isEmpty(clientIp) && shouldCheckIfVoted(existingShow)) {
+                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
+            }
             if(this.isIpBlocked(clientIp, existingShow)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
             if(this.hasViewerVoted(existingShow, clientIp)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
             }
             if(!this.isViewerPresent(existingShow, latitude, longitude)) {
-                throw new CustomerGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
+                throw new CustomGraphQLExceptionResolver(StatusResponse.INVALID_LOCATION.name());
             }
             Optional<Sequence> requestedSequence = existingShow.getSequences().stream()
                     .filter(seq -> StringUtils.equalsIgnoreCase(seq.getName(), name))
@@ -185,7 +190,7 @@ public class GraphQLMutationService {
                 }
             }
         }
-        throw new CustomerGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+        throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
     private boolean isIpBlocked(String ipAddress, Show show) {
@@ -200,6 +205,14 @@ public class GraphQLMutationService {
             return show.getRequests().stream().anyMatch(request -> StringUtils.equalsIgnoreCase(ipAddress, request.getViewerRequested()));
         }
         return false;
+    }
+
+    private Boolean shouldCheckIfRequested(Show show) {
+        return BooleanUtils.isTrue(show.getPreferences().getCheckIfRequested());
+    }
+
+    private Boolean shouldCheckIfVoted(Show show) {
+        return BooleanUtils.isTrue(show.getPreferences().getCheckIfVoted());
     }
 
     private Boolean hasViewerVoted(Show show, String ipAddress) {
@@ -230,13 +243,13 @@ public class GraphQLMutationService {
 
     private void checkIfSequenceRequested(Show show, Sequence requestedSequence) {
         if(this.isRequestedSequencePlayingNow(show, requestedSequence)) {
-            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
         if(this.isRequestedSequencePlayingNext(show, requestedSequence)) {
-            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
         if(this.isRequestedSequenceWithinRequestLimit(show, requestedSequence)) {
-            throw new CustomerGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
+            throw new CustomGraphQLExceptionResolver(StatusResponse.SEQUENCE_REQUESTED.name());
         }
     }
 
@@ -269,7 +282,7 @@ public class GraphQLMutationService {
             show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
-                    .viewerRequested(ipAddress)
+                    .viewerRequested(StringUtils.isEmpty(ipAddress) ? "" : ipAddress)
                     .position(1)
                     .build());
         }else {
@@ -278,7 +291,7 @@ public class GraphQLMutationService {
             latestRequest.ifPresent(request -> show.getRequests().add(Request.builder()
                     .sequence(requestedSequence)
                     .ownerRequested(false)
-                    .viewerRequested(ipAddress)
+                    .viewerRequested(StringUtils.isEmpty(ipAddress) ? "" : ipAddress)
                     .position(request.getPosition() + 1)
                     .build()));
         }
@@ -311,14 +324,14 @@ public class GraphQLMutationService {
                 .findFirst();
         if(sequenceVotes.isPresent()) {
             sequenceVotes.get().setVotes(sequenceVotes.get().getVotes() + 1);
-            sequenceVotes.get().getViewersVoted().add(ipAddress);
+            sequenceVotes.get().getViewersVoted().add(StringUtils.isEmpty(ipAddress) ? "" : ipAddress);
             sequenceVotes.get().setLastVoteTime(LocalDateTime.now());
         }else {
             show.getVotes().add(Vote.builder()
                     .sequence(votedSequence)
                     .ownerVoted(false)
                     .lastVoteTime(LocalDateTime.now())
-                    .viewersVoted(List.of(ipAddress))
+                    .viewersVoted(List.of(StringUtils.isEmpty(ipAddress) ? "" : ipAddress))
                     .votes(isGrouped ? 1001 : 1)
                     .build());
         }
