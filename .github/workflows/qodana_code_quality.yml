@@ -30,6 +30,10 @@ jobs:
         run: ./gradlew --version
       - name: Run Tests
         run: ./gradlew test
+      - name: Create coverage-data directory and copy contents
+        run: |
+          mkdir -p .qodana/code-coverage
+          cp -R build/reports/jacoco/test/* .qodana/code-coverage/
       - name: Archive coverage data
         uses: actions/upload-artifact@v4
         with:
