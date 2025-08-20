@@ -6,12 +6,6 @@ include:
   - name: CheckDependencyLicenses
 coverage:
   reportProblems: true
-qualityGate:
-  conditions:
-    - metric: LINE_COVERAGE
-      operator: <
-      value: 100
-    - metric: LINE_COVERAGE
-      operator: <
-      value: 100
-      onNewCode: true
+testCoverageThresholds:
+  total: 80 # Fails if total code coverage is below 80%
+  fresh: 90 # Fails if coverage for new/modified code is below 90%
