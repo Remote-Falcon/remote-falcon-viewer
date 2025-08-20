@@ -26,10 +26,8 @@ jobs:
           distribution: 'graalvm-community'
       - name: Validate Gradle Wrapper
         run: ./gradlew --version
-        working-directory: JVM/jacoco/gradle
       - name: Run Tests
         run: ./gradlew test
-        working-directory: JVM/jacoco/gradle
       - name: Archive coverage data
         uses: actions/upload-artifact@v4
         with:
