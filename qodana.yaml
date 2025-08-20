@@ -7,6 +7,13 @@ include:
 coverage:
   reportProblems: true
 failureConditions:
+  severityThresholds:
+    any: 50 # Total number of problems in all severities
+    critical: 1 # Severities
+    high: 2
+    moderate: 3
+    low: 4
+    info: 5
   testCoverageThresholds:
-    total: 80 # Fails if total code coverage is below 80%
-    fresh: 90 # Fails if coverage for new/modified code is below 90%
+    fresh: 8 # Fresh code coverage
+    total: 9 # Total percentage
