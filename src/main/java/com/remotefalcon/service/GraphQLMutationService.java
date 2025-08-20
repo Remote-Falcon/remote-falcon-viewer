@@ -95,12 +95,15 @@ public class GraphQLMutationService {
         throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
-    public Boolean addSequenceToQueue(String showSubdomain, String name, Double latitude, Double longitude) {
+    public Boolean addSequenceToQueue(String showSubdomain, String name, Float latitude, Float longitude) {
         Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
         if(show.isPresent()) {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
-            if(StringUtils.isEmpty(clientIp) && shouldCheckIfVoted(existingShow)) {
+            if(StringUtils.isEmpty(clientIp)) {
+                throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+            }
+            if(shouldCheckIfVoted(existingShow)) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
             }
             if(this.isIpBlocked(clientIp, show.get())) {
@@ -157,12 +160,15 @@ public class GraphQLMutationService {
         throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
     }
 
-    public Boolean voteForSequence(String showSubdomain, String name, Double latitude, Double longitude) {
+    public Boolean voteForSequence(String showSubdomain, String name, Float latitude, Float longitude) {
         Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
         if(show.isPresent()) {
             Show existingShow = show.get();
             String clientIp = ClientUtil.getClientIP(context);
-            if(StringUtils.isEmpty(clientIp) && shouldCheckIfVoted(existingShow)) {
+            if(StringUtils.isEmpty(clientIp)) {
+                throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+            }
+            if(shouldCheckIfVoted(existingShow)) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
             }
             if(this.isIpBlocked(clientIp, existingShow)) {
@@ -229,7 +235,10 @@ public class GraphQLMutationService {
         return false;
     }
 
-    private Boolean isViewerPresent(Show show, Double latitude, Double longitude) {
+    private Boolean isViewerPresent(Show show, Float latitude, Float longitude) {
+        if(latitude == null || longitude == null) {
+            return false;
+        }
         if(show.getPreferences().getLocationCheckMethod() == LocationCheckMethod.GEO) {
             Double distance = LocationUtil.asTheCrowFlies(
                     show.getPreferences().getShowLatitude(),

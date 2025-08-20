@@ -25,13 +25,15 @@ public class RestController {
             this.graphQLMutationService.addSequenceToQueue(
                     request.getShowSubdomain(),
                     request.getSequence(),
-                    request.getViewerLatitude().doubleValue(),
-                    request.getViewerLongitude().doubleValue()
+                    request.getViewerLatitude(),
+                    request.getViewerLongitude()
             );
             return RequestVoteResponse.builder().build();
         }catch (CustomGraphQLExceptionResolver e) {
+            Object messageObj = e.getExtensions().get("message");
+            String message = messageObj != null ? messageObj.toString() : "An error occurred";
             return RequestVoteResponse.builder()
-                    .message(e.getExtensions().get("message").toString())
+                    .message(message)
                     .build();
         }
     }
@@ -44,13 +46,15 @@ public class RestController {
             this.graphQLMutationService.voteForSequence(
                     request.getShowSubdomain(),
                     request.getSequence(),
-                    request.getViewerLatitude().doubleValue(),
-                    request.getViewerLongitude().doubleValue()
+                    request.getViewerLatitude(),
+                    request.getViewerLongitude()
             );
             return RequestVoteResponse.builder().build();
         }catch (CustomGraphQLExceptionResolver e) {
+            Object messageObj = e.getExtensions().get("message");
+            String message = messageObj != null ? messageObj.toString() : "An error occurred";
             return RequestVoteResponse.builder()
-                    .message(e.getExtensions().get("message").toString())
+                    .message(message)
                     .build();
         }
     }
