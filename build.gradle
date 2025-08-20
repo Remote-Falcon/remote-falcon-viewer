@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'jacoco'
 }
 
 repositories {
@@ -45,6 +46,22 @@ java {
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
 }
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required.set(true)
+        csv.required.set(false)
+        html.required.set(true)
+    }
+}
+
+test.finalizedBy jacocoTestReport
+
 compileJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << '-parameters'
