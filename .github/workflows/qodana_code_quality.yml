@@ -24,6 +24,8 @@ jobs:
         with:
           java-version: '21'
           distribution: 'graalvm-community'
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
       - name: Validate Gradle Wrapper
         run: ./gradlew --version
       - name: Run Tests
@@ -32,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gradle-coverage-data-jacoco
-          path: JVM/jacoco/gradle/.qodana/code-coverage
+          path: .qodana/code-coverage
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2025.1
         with:
