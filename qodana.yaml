@@ -5,6 +5,4 @@ profile:
 include:
   - name: CheckDependencyLicenses
 coverage:
-  reports:
-    - type: jacoco
-      path: build/reports/jacoco/test/jacocoTestReport.xml
+  reportProblems: true
