@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus'
-    id 'jacoco'
+    id "org.sonarqube" version "6.2.0.5505"
 }
 
 repositories {
@@ -47,20 +47,12 @@ test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
 }
 
-jacoco {
-    toolVersion = "0.8.11"
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required.set(true)
-        csv.required.set(false)
-        html.required.set(true)
+sonar {
+    properties {
+        property "sonar.projectKey", "remote-falcon_remote-falcon-viewer"
+        property "sonar.organization", "remote-falcon"
     }
 }
-
-test.finalizedBy jacocoTestReport
 
 compileJava {
     options.encoding = 'UTF-8'
