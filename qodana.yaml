@@ -6,6 +6,7 @@ include:
   - name: CheckDependencyLicenses
 coverage:
   reportProblems: true
-testCoverageThresholds:
-  total: 80 # Fails if total code coverage is below 80%
-  fresh: 90 # Fails if coverage for new/modified code is below 90%
+failureConditions:
+  testCoverageThresholds:
+    total: 80 # Fails if total code coverage is below 80%
+    fresh: 90 # Fails if coverage for new/modified code is below 90%
