@@ -51,14 +51,18 @@ public class GraphQLController {
     @Name("addSequenceToQueue")
     @Description("Add Sequence To Queue")
     public Boolean addSequenceToQueue(String showSubdomain, String name, Double latitude, Double longitude) {
-        return graphQLMutationService.addSequenceToQueue(showSubdomain, name, latitude, longitude);
+        return graphQLMutationService.addSequenceToQueue(showSubdomain, name,
+                latitude != null ? latitude.floatValue() : null,
+                longitude != null ? longitude.floatValue() : null);
     }
 
     @Mutation
     @Name("voteForSequence")
     @Description("Vote For Sequence")
     public Boolean voteForSequence(String showSubdomain, String name, Double latitude, Double longitude) {
-        return graphQLMutationService.voteForSequence(showSubdomain, name, latitude, longitude);
+        return graphQLMutationService.voteForSequence(showSubdomain, name,
+                latitude != null ? latitude.floatValue() : null,
+                longitude != null ? longitude.floatValue() : null);
     }
 
     /*******
