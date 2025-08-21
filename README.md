@@ -1,4 +1,4 @@
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=remote-falcon_remote-falcon-viewer)](https://sonarcloud.io/summary/new_code?id=remote-falcon_remote-falcon-viewer)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=Remote-Falcon_remote-falcon-viewer)](https://sonarcloud.io/summary/new_code?id=Remote-Falcon_remote-falcon-viewer)
 
 # Remote Falcon Viewer
 
