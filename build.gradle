@@ -65,7 +65,7 @@ test.finalizedBy jacocoTestReport
 
 sonar {
     properties {
-        property "sonar.projectKey", "remote-falcon_remote-falcon-viewer"
+        property "sonar.projectKey", "Remote-Falcon_remote-falcon-viewer"
         property "sonar.organization", "remote-falcon"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
     }
