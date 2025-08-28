@@ -3,6 +3,7 @@ package com.remotefalcon.service;
 import com.remotefalcon.exception.CustomGraphQLExceptionResolver;
 import com.remotefalcon.library.enums.LocationCheckMethod;
 import com.remotefalcon.library.enums.StatusResponse;
+import com.remotefalcon.library.enums.ViewerControlMode;
 import com.remotefalcon.library.models.*;
 import com.remotefalcon.library.quarkus.entity.Show;
 import com.remotefalcon.repository.ShowRepository;
@@ -103,9 +104,6 @@ public class GraphQLMutationService {
             if(StringUtils.isEmpty(clientIp)) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
             }
-            if(shouldCheckIfVoted(existingShow)) {
-                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
-            }
             if(this.isIpBlocked(clientIp, show.get())) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
@@ -168,9 +166,6 @@ public class GraphQLMutationService {
             if(StringUtils.isEmpty(clientIp)) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
             }
-            if(shouldCheckIfVoted(existingShow)) {
-                throw new CustomGraphQLExceptionResolver(StatusResponse.ALREADY_VOTED.name());
-            }
             if(this.isIpBlocked(clientIp, existingShow)) {
                 throw new CustomGraphQLExceptionResolver(StatusResponse.NAUGHTY.name());
             }
@@ -211,14 +206,6 @@ public class GraphQLMutationService {
             return show.getRequests().stream().anyMatch(request -> StringUtils.equalsIgnoreCase(ipAddress, request.getViewerRequested()));
         }
         return false;
-    }
-
-    private Boolean shouldCheckIfRequested(Show show) {
-        return BooleanUtils.isTrue(show.getPreferences().getCheckIfRequested());
-    }
-
-    private Boolean shouldCheckIfVoted(Show show) {
-        return BooleanUtils.isTrue(show.getPreferences().getCheckIfVoted());
     }
 
     private Boolean hasViewerVoted(Show show, String ipAddress) {
