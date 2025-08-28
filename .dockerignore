@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.vscode
+.gradle
+build
+out
+**/.DS_Store
+**/Thumbs.db
+**/*.iml
+**/*.log
