@@ -24,7 +24,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-undertow'
     implementation 'org.apache.commons:commons-lang3:3.x'
     implementation 'commons-collections:commons-collections:3.2.2'
-    implementation ('com.github.Remote-Falcon:remote-falcon-library:9fc220bc0e') {
+    implementation ('com.github.Remote-Falcon:remote-falcon-library:3c4dee72a3') {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-data-mongodb"
     }
     implementation 'io.quarkus:quarkus-smallrye-health'
