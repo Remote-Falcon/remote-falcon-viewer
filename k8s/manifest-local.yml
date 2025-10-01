@@ -6,7 +6,7 @@ metadata:
   labels:
     app: remote-falcon-viewer
 spec:
-  replicas: 4
+  replicas: 8
   selector:
     matchLabels:
       app: remote-falcon-viewer
@@ -33,6 +33,9 @@ spec:
               cpu: 750m
           ports:
             - containerPort: 8080
+          env:
+            - name: MONGO_URI
+              value: mongodb://host.docker.internal:27017/remote-falcon?authSource=admin&connectTimeoutMS=2000&socketTimeoutMS=15000&maxIdleTimeMS=120000&waitQueueTimeoutMS=5000&maxPoolSize=600&minPoolSize=100
           startupProbe:
             httpGet:
               path: /remote-falcon-viewer/q/health
@@ -60,9 +63,11 @@ kind: Service
 metadata:
   name: remote-falcon-viewer
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 8080
+      targetPort: 8080
+      nodePort: 30080
   selector:
     app: remote-falcon-viewer
 ---
@@ -91,8 +96,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: remote-falcon-viewer
-  minReplicas: 4
-  maxReplicas: 6
+  minReplicas: 8
+  maxReplicas: 12
   metrics:
     - type: Resource
       resource:

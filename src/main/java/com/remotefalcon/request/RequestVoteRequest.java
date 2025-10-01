@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RequestVoteRequest {
-    private Float viewerLatitude;
-    private Float viewerLongitude;
-    private String sequence;
-    private String showSubdomain;
+  private Float viewerLatitude;
+  private Float viewerLongitude;
+  private String sequence;
+  private String showSubdomain;
 }
