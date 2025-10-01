@@ -102,6 +102,7 @@ public class GraphQLMutationService {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
       if (StringUtils.isEmpty(clientIp)) {
+        log.errorf("Client IP not found or empty in addSequenceToQueue: showSubdomain=%s, name=%s", showSubdomain, name);
         throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
       }
       if (this.isIpBlocked(clientIp, show.get())) {
@@ -138,16 +139,12 @@ public class GraphQLMutationService {
         // Batched write: single DB call for both request and stat
         this.showRepository.appendRequestAndJukeboxStat(showSubdomain, request, jukeboxStat);
 
-        // Update in-memory
-        show.get().getStats().getJukebox().add(jukeboxStat);
-        if (CollectionUtils.isEmpty(show.get().getRequests())) {
-          show.get().setRequests(new ArrayList<>());
-        }
-        show.get().getRequests().add(request);
-
+        // Handle PSA if needed (re-fetch show to avoid stale data)
         if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
             && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
-          this.handlePsaForJukebox(showSubdomain, show.get());
+          Show refreshedShow = this.showRepository.findByShowSubdomain(showSubdomain)
+              .orElseThrow(() -> new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name()));
+          this.handlePsaForJukebox(showSubdomain, refreshedShow);
         }
         return true;
       } else { // It's a sequence group
@@ -188,22 +185,20 @@ public class GraphQLMutationService {
           // Batched write: single DB call for all requests and stat
           this.showRepository.appendMultipleRequestsAndJukeboxStat(showSubdomain, requests, jukeboxStat);
 
-          // Update in-memory
-          show.get().getStats().getJukebox().add(jukeboxStat);
-          if (CollectionUtils.isEmpty(show.get().getRequests())) {
-            show.get().setRequests(new ArrayList<>());
-          }
-          show.get().getRequests().addAll(requests);
-
+          // Handle PSA if needed (re-fetch show to avoid stale data)
           if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
               && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
-            this.handlePsaForJukebox(showSubdomain, show.get());
+            Show refreshedShow = this.showRepository.findByShowSubdomain(showSubdomain)
+                .orElseThrow(() -> new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name()));
+            this.handlePsaForJukebox(showSubdomain, refreshedShow);
           }
           return true;
         }
       }
+      log.errorf("Sequence or sequence group not found: showSubdomain=%s, name=%s", showSubdomain, name);
       throw new CustomGraphQLExceptionResolver("SEQUENCE_NOT_FOUND");
     }
+    log.errorf("Show not found: showSubdomain=%s", showSubdomain);
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }
 
@@ -213,6 +208,7 @@ public class GraphQLMutationService {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
       if (StringUtils.isEmpty(clientIp)) {
+        log.errorf("Client IP not found or empty in voteForSequence: showSubdomain=%s, name=%s", showSubdomain, name);
         throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
       }
       if (this.isIpBlocked(clientIp, existingShow)) {

@@ -381,16 +381,12 @@ class GraphQLMutationServiceTest {
       Boolean result = service.addSequenceToQueue("sub", "song-a", 0f, 0f);
       assertTrue(result);
 
-      // One jukebox stat added
-      assertEquals(1, show.getStats().getJukebox().size());
-      // Requests initialized with a single entry at position 1
-      assertEquals(1, show.getRequests().size());
-      Request r = show.getRequests().get(0);
-      assertEquals(1, r.getPosition());
-      assertEquals("1.2.3.4", r.getViewerRequested());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify DB operations were called with correct data
+      verify(showRepository).appendRequestAndJukeboxStat(eq("sub"), argThat(req ->
+          req.getPosition() == 1 && "1.2.3.4".equals(req.getViewerRequested())
+      ), argThat(stat ->
+          "song-a".equals(stat.getName())
+      ));
     }
 
     @Test
@@ -429,20 +425,21 @@ class GraphQLMutationServiceTest {
       show.getSequences().add(userSeq);
       show.getSequences().add(psaSeq);
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show), Optional.of(show));
       when(showRepository.nextRequestPosition("sub")).thenReturn(6L, 7L);
 
       Boolean result = service.addSequenceToQueue("sub", "user-seq", 0f, 0f);
       assertTrue(result);
 
-      // Two new requests should be appended: positions 6 (user) and 7 (PSA)
-      assertEquals(3, show.getRequests().size());
-      Request userReq = show.getRequests().get(1);
-      Request psaReq = show.getRequests().get(2);
-      assertEquals(6, userReq.getPosition());
-      assertEquals("1.2.3.4", userReq.getViewerRequested());
-      assertEquals(7, psaReq.getPosition());
-      assertEquals("PSA", psaReq.getViewerRequested());
+      // Verify user request was added
+      verify(showRepository).appendRequestAndJukeboxStat(eq("sub"), argThat(req ->
+          req.getPosition() == 6 && "1.2.3.4".equals(req.getViewerRequested())
+      ), any());
+
+      // Verify PSA request was added
+      verify(showRepository).appendRequest(eq("sub"), argThat(req ->
+          req.getPosition() == 7 && "PSA".equals(req.getViewerRequested())
+      ));
     }
 
     @Test
@@ -483,12 +480,12 @@ class GraphQLMutationServiceTest {
       Boolean result = service.addSequenceToQueue("sub", "GroupA", 0f, 0f);
       assertTrue(result);
 
-      // Jukebox stat for group added
-      assertEquals(1, show.getStats().getJukebox().size());
-      // Two requests created ordered by sequence order -> positions 1 and 2
-      assertEquals(2, show.getRequests().size());
-      assertEquals(1, show.getRequests().get(0).getPosition());
-      assertEquals(2, show.getRequests().get(1).getPosition());
+      // Verify DB operation was called with group requests
+      verify(showRepository).appendMultipleRequestsAndJukeboxStat(eq("sub"), argThat(reqs ->
+          reqs.size() == 2 && reqs.get(0).getPosition() == 1 && reqs.get(1).getPosition() == 2
+      ), argThat(stat ->
+          "GroupA".equals(stat.getName())
+      ));
     }
 
     @Test
