@@ -11,26 +11,26 @@ import java.util.Map;
 
 @Provider
 public class CustomGraphQLExceptionResolver extends RuntimeException implements GraphQLError {
-    public CustomGraphQLExceptionResolver(String errorMessage) {
-        super(errorMessage);
-    }
+  public CustomGraphQLExceptionResolver(String errorMessage) {
+    super(errorMessage);
+  }
 
-    @Override
-    public Map<String, Object> getExtensions() {
-        Map<String, Object> customAttributes = new LinkedHashMap<>();
+  @Override
+  public Map<String, Object> getExtensions() {
+    Map<String, Object> customAttributes = new LinkedHashMap<>();
 
-        customAttributes.put("message", this.getMessage());
+    customAttributes.put("message", this.getMessage());
 
-        return customAttributes;
-    }
+    return customAttributes;
+  }
 
-    @Override
-    public List<SourceLocation> getLocations() {
-        return null;
-    }
+  @Override
+  public List<SourceLocation> getLocations() {
+    return null;
+  }
 
-    @Override
-    public ErrorType getErrorType() {
-        return null;
-    }
+  @Override
+  public ErrorType getErrorType() {
+    return null;
+  }
 }

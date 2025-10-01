@@ -14,48 +14,46 @@ import jakarta.ws.rs.core.MediaType;
 @ApplicationScoped
 @Path("/")
 public class RestController {
-    @Inject
-    GraphQLMutationService graphQLMutationService;
+  @Inject
+  GraphQLMutationService graphQLMutationService;
 
-    @POST
-    @Path("/addSequenceToQueue")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public RequestVoteResponse addSequenceToQueue(RequestVoteRequest request) {
-        try {
-            this.graphQLMutationService.addSequenceToQueue(
-                    request.getShowSubdomain(),
-                    request.getSequence(),
-                    request.getViewerLatitude(),
-                    request.getViewerLongitude()
-            );
-            return RequestVoteResponse.builder().build();
-        }catch (CustomGraphQLExceptionResolver e) {
-            Object messageObj = e.getExtensions().get("message");
-            String message = messageObj != null ? messageObj.toString() : "An error occurred";
-            return RequestVoteResponse.builder()
-                    .message(message)
-                    .build();
-        }
+  @POST
+  @Path("/addSequenceToQueue")
+  @Consumes(MediaType.APPLICATION_JSON)
+  public RequestVoteResponse addSequenceToQueue(RequestVoteRequest request) {
+    try {
+      this.graphQLMutationService.addSequenceToQueue(
+          request.getShowSubdomain(),
+          request.getSequence(),
+          request.getViewerLatitude(),
+          request.getViewerLongitude());
+      return RequestVoteResponse.builder().build();
+    } catch (CustomGraphQLExceptionResolver e) {
+      Object messageObj = e.getExtensions().get("message");
+      String message = messageObj != null ? messageObj.toString() : "An error occurred";
+      return RequestVoteResponse.builder()
+          .message(message)
+          .build();
     }
+  }
 
-    @POST
-    @Path("/voteForSequence")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public RequestVoteResponse voteForSequence(RequestVoteRequest request) {
-        try {
-            this.graphQLMutationService.voteForSequence(
-                    request.getShowSubdomain(),
-                    request.getSequence(),
-                    request.getViewerLatitude(),
-                    request.getViewerLongitude()
-            );
-            return RequestVoteResponse.builder().build();
-        }catch (CustomGraphQLExceptionResolver e) {
-            Object messageObj = e.getExtensions().get("message");
-            String message = messageObj != null ? messageObj.toString() : "An error occurred";
-            return RequestVoteResponse.builder()
-                    .message(message)
-                    .build();
-        }
+  @POST
+  @Path("/voteForSequence")
+  @Consumes(MediaType.APPLICATION_JSON)
+  public RequestVoteResponse voteForSequence(RequestVoteRequest request) {
+    try {
+      this.graphQLMutationService.voteForSequence(
+          request.getShowSubdomain(),
+          request.getSequence(),
+          request.getViewerLatitude(),
+          request.getViewerLongitude());
+      return RequestVoteResponse.builder().build();
+    } catch (CustomGraphQLExceptionResolver e) {
+      Object messageObj = e.getExtensions().get("message");
+      String message = messageObj != null ? messageObj.toString() : "An error occurred";
+      return RequestVoteResponse.builder()
+          .message(message)
+          .build();
     }
+  }
 }

@@ -17,102 +17,102 @@ import static org.mockito.Mockito.*;
 @QuarkusTest
 class GraphQLControllerTest {
 
-    @Inject
-    GraphQLController controller;
+  @Inject
+  GraphQLController controller;
 
-    @InjectMock
-    GraphQLMutationService mutationService;
+  @InjectMock
+  GraphQLMutationService mutationService;
 
-    @InjectMock
-    GraphQLQueryService queryService;
+  @InjectMock
+  GraphQLQueryService queryService;
 
-    @Test
-    @DisplayName("insertViewerPageStats delegates to mutation service and returns result")
-    void testInsertViewerPageStats() {
-        LocalDateTime now = LocalDateTime.now();
-        when(mutationService.insertViewerPageStats("sub", now)).thenReturn(true);
+  @Test
+  @DisplayName("insertViewerPageStats delegates to mutation service and returns result")
+  void testInsertViewerPageStats() {
+    LocalDateTime now = LocalDateTime.now();
+    when(mutationService.insertViewerPageStats("sub", now)).thenReturn(true);
 
-        Boolean result = controller.insertViewerPageStats("sub", now);
+    Boolean result = controller.insertViewerPageStats("sub", now);
 
-        assertTrue(result);
-        verify(mutationService).insertViewerPageStats("sub", now);
-    }
+    assertTrue(result);
+    verify(mutationService).insertViewerPageStats("sub", now);
+  }
 
-    @Test
-    @DisplayName("updateActiveViewers delegates to mutation service and returns result")
-    void testUpdateActiveViewers() {
-        when(mutationService.updateActiveViewers("sub")).thenReturn(true);
+  @Test
+  @DisplayName("updateActiveViewers delegates to mutation service and returns result")
+  void testUpdateActiveViewers() {
+    when(mutationService.updateActiveViewers("sub")).thenReturn(true);
 
-        Boolean result = controller.updateActiveViewers("sub");
+    Boolean result = controller.updateActiveViewers("sub");
 
-        assertTrue(result);
-        verify(mutationService).updateActiveViewers("sub");
-    }
+    assertTrue(result);
+    verify(mutationService).updateActiveViewers("sub");
+  }
 
-    @Test
-    @DisplayName("updatePlayingNow delegates to mutation service and returns result")
-    void testUpdatePlayingNow() {
-        when(mutationService.updatePlayingNow("sub", "Track A")).thenReturn(true);
+  @Test
+  @DisplayName("updatePlayingNow delegates to mutation service and returns result")
+  void testUpdatePlayingNow() {
+    when(mutationService.updatePlayingNow("sub", "Track A")).thenReturn(true);
 
-        Boolean result = controller.updatePlayingNow("sub", "Track A");
+    Boolean result = controller.updatePlayingNow("sub", "Track A");
 
-        assertTrue(result);
-        verify(mutationService).updatePlayingNow("sub", "Track A");
-    }
+    assertTrue(result);
+    verify(mutationService).updatePlayingNow("sub", "Track A");
+  }
 
-    @Test
-    @DisplayName("updatePlayingNext delegates to mutation service and returns result")
-    void testUpdatePlayingNext() {
-        when(mutationService.updatePlayingNext("sub", "Track B")).thenReturn(true);
+  @Test
+  @DisplayName("updatePlayingNext delegates to mutation service and returns result")
+  void testUpdatePlayingNext() {
+    when(mutationService.updatePlayingNext("sub", "Track B")).thenReturn(true);
 
-        Boolean result = controller.updatePlayingNext("sub", "Track B");
+    Boolean result = controller.updatePlayingNext("sub", "Track B");
 
-        assertTrue(result);
-        verify(mutationService).updatePlayingNext("sub", "Track B");
-    }
+    assertTrue(result);
+    verify(mutationService).updatePlayingNext("sub", "Track B");
+  }
 
-    @Test
-    @DisplayName("addSequenceToQueue delegates to mutation service and returns result")
-    void testAddSequenceToQueue() {
-        when(mutationService.addSequenceToQueue("sub", "Song", 1.23f, 4.56f)).thenReturn(true);
+  @Test
+  @DisplayName("addSequenceToQueue delegates to mutation service and returns result")
+  void testAddSequenceToQueue() {
+    when(mutationService.addSequenceToQueue("sub", "Song", 1.23f, 4.56f)).thenReturn(true);
 
-        Boolean result = controller.addSequenceToQueue("sub", "Song", 1.23, 4.56);
+    Boolean result = controller.addSequenceToQueue("sub", "Song", 1.23, 4.56);
 
-        assertTrue(result);
-        verify(mutationService).addSequenceToQueue("sub", "Song", 1.23f, 4.56f);
-    }
+    assertTrue(result);
+    verify(mutationService).addSequenceToQueue("sub", "Song", 1.23f, 4.56f);
+  }
 
-    @Test
-    @DisplayName("voteForSequence delegates to mutation service and returns result")
-    void testVoteForSequence() {
-        when(mutationService.voteForSequence("sub", "Song", 1.23f, 4.56f)).thenReturn(true);
+  @Test
+  @DisplayName("voteForSequence delegates to mutation service and returns result")
+  void testVoteForSequence() {
+    when(mutationService.voteForSequence("sub", "Song", 1.23f, 4.56f)).thenReturn(true);
 
-        Boolean result = controller.voteForSequence("sub", "Song", 1.23, 4.56);
+    Boolean result = controller.voteForSequence("sub", "Song", 1.23, 4.56);
 
-        assertTrue(result);
-        verify(mutationService).voteForSequence("sub", "Song", 1.23f, 4.56f);
-    }
+    assertTrue(result);
+    verify(mutationService).voteForSequence("sub", "Song", 1.23f, 4.56f);
+  }
 
-    @Test
-    @DisplayName("getShow delegates to query service and returns the show")
-    void testGetShow() {
-        Show show = mock(Show.class);
-        when(queryService.getShow("sub")).thenReturn(show);
+  @Test
+  @DisplayName("getShow delegates to query service and returns the show")
+  void testGetShow() {
+    Show show = mock(Show.class);
+    when(queryService.getShow("sub")).thenReturn(show);
 
-        Show actual = controller.getShow("sub");
+    Show actual = controller.getShow("sub");
 
-        assertSame(show, actual);
-        verify(queryService).getShow("sub");
-    }
+    assertSame(show, actual);
+    verify(queryService).getShow("sub");
+  }
 
-    @Test
-    @DisplayName("activeViewerPage delegates to query service and returns the page")
-    void testActiveViewerPage() {
-        when(queryService.activeViewerPage("sub")).thenReturn("PAGE");
+  @Test
+  @DisplayName("activeViewerPage delegates to query service and returns the page")
+  void testActiveViewerPage() {
+    when(queryService.activeViewerPage("sub")).thenReturn("PAGE");
 
-        String page = controller.activeViewerPage("sub");
+    String page = controller.activeViewerPage("sub");
 
-        assertEquals("PAGE", page);
-        verify(queryService).activeViewerPage("sub");
-    }
+    assertEquals("PAGE", page);
+    verify(queryService).activeViewerPage("sub");
+  }
 }
