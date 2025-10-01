@@ -121,13 +121,30 @@ public class GraphQLMutationService {
           .findFirst();
       if (requestedSequence.isPresent()) {
         this.checkIfSequenceRequested(show.get(), requestedSequence.get());
+
+        // Build request and stat
+        long nextPosition = this.showRepository.nextRequestPosition(showSubdomain);
+        Request request = Request.builder()
+            .sequence(requestedSequence.get())
+            .ownerRequested(false)
+            .viewerRequested(StringUtils.isEmpty(clientIp) ? "" : clientIp)
+            .position(Math.toIntExact(nextPosition))
+            .build();
         Stat.Jukebox jukeboxStat = Stat.Jukebox.builder()
             .dateTime(LocalDateTime.now())
             .name(requestedSequence.get().getName())
             .build();
-        this.showRepository.appendJukeboxStat(showSubdomain, jukeboxStat);
+
+        // Batched write: single DB call for both request and stat
+        this.showRepository.appendRequestAndJukeboxStat(showSubdomain, request, jukeboxStat);
+
+        // Update in-memory
         show.get().getStats().getJukebox().add(jukeboxStat);
-        this.saveSequenceRequest(showSubdomain, show.get(), requestedSequence.get(), clientIp);
+        if (CollectionUtils.isEmpty(show.get().getRequests())) {
+          show.get().setRequests(new ArrayList<>());
+        }
+        show.get().getRequests().add(request);
+
         if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
             && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
           this.handlePsaForJukebox(showSubdomain, show.get());
@@ -143,16 +160,41 @@ public class GraphQLMutationService {
                   sequence -> StringUtils.equalsIgnoreCase(requestedSequenceGroup.get().getName(), sequence.getGroup()))
               .sorted(Comparator.comparing(Sequence::getOrder))
               .toList();
+
+          // Check all sequences first
+          for (Sequence sequence : sequencesInGroup) {
+            this.checkIfSequenceRequested(show.get(), sequence);
+          }
+
+          // Allocate all positions at once (single DB call)
+          long startPosition = this.showRepository.allocatePositionBlock(showSubdomain, sequencesInGroup.size());
+
+          // Build all requests using allocated positions
+          List<Request> requests = new ArrayList<>();
+          for (int i = 0; i < sequencesInGroup.size(); i++) {
+            Request request = Request.builder()
+                .sequence(sequencesInGroup.get(i))
+                .ownerRequested(false)
+                .viewerRequested(StringUtils.isEmpty(clientIp) ? "" : clientIp)
+                .position(Math.toIntExact(startPosition + i))
+                .build();
+            requests.add(request);
+          }
           Stat.Jukebox jukeboxStat = Stat.Jukebox.builder()
               .dateTime(LocalDateTime.now())
               .name(requestedSequenceGroup.get().getName())
               .build();
-          this.showRepository.appendJukeboxStat(showSubdomain, jukeboxStat);
+
+          // Batched write: single DB call for all requests and stat
+          this.showRepository.appendMultipleRequestsAndJukeboxStat(showSubdomain, requests, jukeboxStat);
+
+          // Update in-memory
           show.get().getStats().getJukebox().add(jukeboxStat);
-          sequencesInGroup.forEach(sequence -> {
-            this.checkIfSequenceRequested(show.get(), sequence);
-            this.saveSequenceRequest(showSubdomain, show.get(), sequence, clientIp);
-          });
+          if (CollectionUtils.isEmpty(show.get().getRequests())) {
+            show.get().setRequests(new ArrayList<>());
+          }
+          show.get().getRequests().addAll(requests);
+
           if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
               && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
             this.handlePsaForJukebox(showSubdomain, show.get());
@@ -160,7 +202,7 @@ public class GraphQLMutationService {
           return true;
         }
       }
-      throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+      throw new CustomGraphQLExceptionResolver("SEQUENCE_NOT_FOUND");
     }
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }

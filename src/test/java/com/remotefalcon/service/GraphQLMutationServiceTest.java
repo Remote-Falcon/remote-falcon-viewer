@@ -478,7 +478,7 @@ class GraphQLMutationServiceTest {
       when(show.getPlayingNext()).thenReturn("NotNext");
 
       when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
-      when(showRepository.nextRequestPosition("sub")).thenReturn(1L, 2L);
+      when(showRepository.allocatePositionBlock("sub", 2)).thenReturn(1L);
 
       Boolean result = service.addSequenceToQueue("sub", "GroupA", 0f, 0f);
       assertTrue(result);
