@@ -298,12 +298,14 @@ public class GraphQLMutationService {
 
   private Boolean isRequestedSequencePlayingNow(Show show, Sequence requestedSequence) {
     return StringUtils.equalsIgnoreCase(show.getPlayingNow(), requestedSequence.getName())
-        || StringUtils.equalsIgnoreCase(show.getPlayingNow(), requestedSequence.getDisplayName());
+        || (StringUtils.isNotEmpty(requestedSequence.getDisplayName())
+            && StringUtils.equalsIgnoreCase(show.getPlayingNow(), requestedSequence.getDisplayName()));
   }
 
   private Boolean isRequestedSequencePlayingNext(Show show, Sequence requestedSequence) {
     return StringUtils.equalsIgnoreCase(show.getPlayingNext(), requestedSequence.getName())
-        || StringUtils.equalsIgnoreCase(show.getPlayingNext(), requestedSequence.getDisplayName());
+        || (StringUtils.isNotEmpty(requestedSequence.getDisplayName())
+            && StringUtils.equalsIgnoreCase(show.getPlayingNext(), requestedSequence.getDisplayName()));
   }
 
   private Boolean isRequestedSequenceWithinRequestLimit(Show show, Sequence requestedSequence) {
