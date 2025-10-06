@@ -376,7 +376,7 @@ class GraphQLMutationServiceTest {
       show.getSequences().add(s);
 
       when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
-      when(showRepository.nextRequestPosition("sub")).thenReturn(1L);
+      when(showRepository.nextRequestPosition(show)).thenReturn(1L);
 
       Boolean result = service.addSequenceToQueue("sub", "song-a", 0f, 0f);
       assertTrue(result);
@@ -426,7 +426,7 @@ class GraphQLMutationServiceTest {
       show.getSequences().add(psaSeq);
 
       when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show), Optional.of(show));
-      when(showRepository.nextRequestPosition("sub")).thenReturn(6L, 7L);
+      when(showRepository.nextRequestPosition(any(Show.class))).thenReturn(6L, 7L);
 
       Boolean result = service.addSequenceToQueue("sub", "user-seq", 0f, 0f);
       assertTrue(result);
@@ -475,7 +475,7 @@ class GraphQLMutationServiceTest {
       when(show.getPlayingNext()).thenReturn("NotNext");
 
       when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
-      when(showRepository.allocatePositionBlock("sub", 2)).thenReturn(1L);
+      when(showRepository.allocatePositionBlock(show, 2)).thenReturn(1L);
 
       Boolean result = service.addSequenceToQueue("sub", "GroupA", 0f, 0f);
       assertTrue(result);

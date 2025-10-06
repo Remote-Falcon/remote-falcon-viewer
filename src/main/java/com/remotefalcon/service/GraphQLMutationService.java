@@ -124,7 +124,7 @@ public class GraphQLMutationService {
         this.checkIfSequenceRequested(show.get(), requestedSequence.get());
 
         // Build request and stat
-        long nextPosition = this.showRepository.nextRequestPosition(showSubdomain);
+        long nextPosition = this.showRepository.nextRequestPosition(existingShow);
         Request request = Request.builder()
             .sequence(requestedSequence.get())
             .ownerRequested(false)
@@ -163,8 +163,8 @@ public class GraphQLMutationService {
             this.checkIfSequenceRequested(show.get(), sequence);
           }
 
-          // Allocate all positions at once (single DB call)
-          long startPosition = this.showRepository.allocatePositionBlock(showSubdomain, sequencesInGroup.size());
+          // Allocate all positions at once
+          long startPosition = this.showRepository.allocatePositionBlock(existingShow, sequencesInGroup.size());
 
           // Build all requests using allocated positions
           List<Request> requests = new ArrayList<>();
@@ -322,7 +322,7 @@ public class GraphQLMutationService {
   }
 
   private void saveSequenceRequest(String showSubdomain, Show show, Sequence requestedSequence, String ipAddress) {
-    long nextPosition = this.showRepository.nextRequestPosition(showSubdomain);
+    long nextPosition = this.showRepository.nextRequestPosition(show);
     Request request = Request.builder()
         .sequence(requestedSequence)
         .ownerRequested(false)

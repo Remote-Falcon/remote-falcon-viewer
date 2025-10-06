@@ -1,15 +1,12 @@
 package com.remotefalcon.repository;
 
-import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Stat;
 import com.remotefalcon.library.quarkus.entity.Show;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.bson.Document;
 
 import java.util.Optional;
 
@@ -19,48 +16,37 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     return find("showSubdomain", showSubdomain).firstResultOptional();
   }
 
-  public long nextRequestPosition(String showSubdomain) {
-    while (true) {
-      Document updated = mongoCollection().withDocumentClass(Document.class).findOneAndUpdate(
-          Filters.eq("showSubdomain", showSubdomain),
-          Updates.inc("requestPositionCursor", 1L),
-          new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
-      if (updated == null) {
-        return 1L;
-      }
-      long cursorValue = 1L;
-      Object cursor = updated.get("requestPositionCursor");
-      if (cursor instanceof Number number) {
-        cursorValue = number.longValue();
-      }
-      return cursorValue;
+  public long nextRequestPosition(Show show) {
+    if (show == null || show.getRequests() == null || show.getRequests().isEmpty()) {
+      return 1L;
     }
+
+    // Find the maximum position in the existing requests and add 1
+    return show.getRequests().stream()
+        .mapToInt(Request::getPosition)
+        .max()
+        .orElse(0) + 1;
   }
 
   /**
-   * Allocates a block of positions at once to reduce DB contention.
+   * Allocates a block of positions at once.
    * Returns the starting position. Caller can use startPos, startPos+1, startPos+2, etc.
-   * @param showSubdomain the show subdomain
+   * @param show the show object
    * @param count how many positions to allocate
    * @return the starting position of the allocated block
    */
-  public long allocatePositionBlock(String showSubdomain, int count) {
-    while (true) {
-      Document updated = mongoCollection().withDocumentClass(Document.class).findOneAndUpdate(
-          Filters.eq("showSubdomain", showSubdomain),
-          Updates.inc("requestPositionCursor", (long) count),
-          new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
-      if (updated == null) {
-        return 1L;
-      }
-      long cursorValue = (long) count;
-      Object cursor = updated.get("requestPositionCursor");
-      if (cursor instanceof Number number) {
-        cursorValue = number.longValue();
-      }
-      // Return the starting position (cursorValue - count + 1)
-      return cursorValue - count + 1;
+  public long allocatePositionBlock(Show show, int count) {
+    if (show == null || show.getRequests() == null || show.getRequests().isEmpty()) {
+      return 1L;
     }
+
+    // Find the maximum position in the existing requests and add 1 to get the starting position
+    int maxPosition = show.getRequests().stream()
+        .mapToInt(Request::getPosition)
+        .max()
+        .orElse(0);
+
+    return maxPosition + 1;
   }
 
   public void appendRequest(String showSubdomain, Request request) {
