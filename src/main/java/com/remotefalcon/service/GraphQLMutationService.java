@@ -37,11 +37,11 @@ public class GraphQLMutationService {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
       if (!StringUtils.equalsIgnoreCase(existingShow.getLastLoginIp(), clientIp)) {
-        existingShow.getStats().getPage().add(Stat.Page.builder()
+        Stat.Page pageStat = Stat.Page.builder()
             .ip(clientIp)
             .dateTime(date)
-            .build());
-        this.showRepository.persistOrUpdate(existingShow);
+            .build();
+        this.showRepository.appendPageStat(showSubdomain, pageStat);
         return true;
       }
       return true;

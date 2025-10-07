@@ -57,6 +57,10 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     mongoCollection().updateOne(Filters.eq("showSubdomain", showSubdomain), Updates.push("stats.jukebox", stat));
   }
 
+  public void appendPageStat(String showSubdomain, Stat.Page stat) {
+    mongoCollection().updateOne(Filters.eq("showSubdomain", showSubdomain), Updates.push("stats.page", stat));
+  }
+
   public void appendRequestAndJukeboxStat(String showSubdomain, Request request, Stat.Jukebox stat) {
     mongoCollection().updateOne(
         Filters.eq("showSubdomain", showSubdomain),
