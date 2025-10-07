@@ -108,8 +108,9 @@ class GraphQLMutationServiceTest {
       Boolean result = service.insertViewerPageStats("test", LocalDateTime.now());
 
       assertTrue(result);
-      assertEquals(1, show.getStats().getPage().size());
-      verify(showRepository).persistOrUpdate(any(Show.class));
+      verify(showRepository).appendPageStat(eq("test"), argThat(stat ->
+          "1.2.3.4".equals(stat.getIp())
+      ));
     }
 
     @Test
@@ -121,8 +122,7 @@ class GraphQLMutationServiceTest {
       Boolean result = service.insertViewerPageStats("test", LocalDateTime.now());
 
       assertTrue(result);
-      assertEquals(0, show.getStats().getPage().size());
-      verify(showRepository, never()).persistOrUpdate(any(Show.class));
+      verify(showRepository, never()).appendPageStat(anyString(), any());
     }
 
     @Test
