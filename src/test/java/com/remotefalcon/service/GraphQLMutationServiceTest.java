@@ -101,37 +101,41 @@ class GraphQLMutationServiceTest {
   @DisplayName("insertViewerPageStats")
   class InsertViewerPageStatsTests {
     @Test
-    @DisplayName("Should add page stat and persist when show exists and IP differs from last login")
+    @DisplayName("Should add page stat when IP differs from last login")
     void shouldInsertViewerPageStats() {
-      Show show = mockShowWithStatsAndActiveViewers("9.9.9.9");
-      when(showRepository.findByShowSubdomain("test")).thenReturn(Optional.of(show));
+      when(showRepository.appendPageStatIfNotOwner(eq("test"), eq("1.2.3.4"), any())).thenReturn(1L);
 
       Boolean result = service.insertViewerPageStats("test", LocalDateTime.now());
 
       assertTrue(result);
-      verify(showRepository).appendPageStat(eq("test"), argThat(stat ->
+      verify(showRepository).appendPageStatIfNotOwner(eq("test"), eq("1.2.3.4"), argThat(stat ->
           "1.2.3.4".equals(stat.getIp())
       ));
     }
 
     @Test
-    @DisplayName("Should return true but not persist when IP equals last login IP")
-    void shouldReturnTrueButNotPersistWhenSameIp() {
-      Show show = mockShowWithStatsAndActiveViewers("1.2.3.4");
-      when(showRepository.findByShowSubdomain("test")).thenReturn(Optional.of(show));
+    @DisplayName("Should return false when IP equals last login IP (no modification)")
+    void shouldReturnFalseWhenSameIp() {
+      when(showRepository.appendPageStatIfNotOwner(eq("test"), eq("1.2.3.4"), any())).thenReturn(0L);
+
+      Boolean result = service.insertViewerPageStats("test", LocalDateTime.now());
+
+      assertFalse(result);
+      verify(showRepository).appendPageStatIfNotOwner(eq("test"), eq("1.2.3.4"), any());
+    }
+
+    @Test
+    @DisplayName("Should return true when client IP is empty")
+    void shouldReturnTrueWhenClientIpEmpty() {
+      // Mock ClientUtil to return empty IP
+      when(httpServerRequest.getHeader("CF-Connecting-IP")).thenReturn(null);
+      when(httpServerRequest.getHeader("X-Forwarded-For")).thenReturn(null);
+      when(httpServerRequest.remoteAddress()).thenReturn(null);
 
       Boolean result = service.insertViewerPageStats("test", LocalDateTime.now());
 
       assertTrue(result);
-      verify(showRepository, never()).appendPageStat(anyString(), any());
-    }
-
-    @Test
-    @DisplayName("Should throw when show not found")
-    void shouldThrowWhenShowNotFound() {
-      when(showRepository.findByShowSubdomain("missing")).thenReturn(Optional.empty());
-      assertThrows(CustomGraphQLExceptionResolver.class,
-          () -> service.insertViewerPageStats("missing", LocalDateTime.now()));
+      verify(showRepository, never()).appendPageStatIfNotOwner(anyString(), anyString(), any());
     }
   }
 

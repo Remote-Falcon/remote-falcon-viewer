@@ -25,12 +25,14 @@ public class GraphQLQueryService {
   ShowRepository showRepository;
 
   public Show getShow(String showSubdomain) {
-    Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
+    // Use optimized query that excludes stats and sensitive fields
+    Optional<Show> show = this.showRepository.findByShowSubdomainForViewer(showSubdomain);
     if (show.isPresent()) {
       Show existingShow = show.get();
       this.updatePlayingNow(existingShow);
       this.updatePlayingNext(existingShow);
       existingShow.setSequences(this.processSequencesForViewer(existingShow));
+      existingShow.setPages(this.filterActivePageOnly(existingShow.getPages()));
     }
     return show.orElse(null);
   }
@@ -74,6 +76,16 @@ public class GraphQLQueryService {
     return this.replaceSequencesWithSequenceGroups(updatedSequences, updatedSequenceGroups);
   }
 
+  private List<ViewerPage> filterActivePageOnly(List<ViewerPage> pages) {
+    if (pages == null) {
+      return null;
+    }
+    return pages.stream()
+        .filter(ViewerPage::getActive)
+        .limit(1)
+        .toList();
+  }
+
   private List<Sequence> sortAndFilterSequences(List<Sequence> sequences) {
     sequences.sort(Comparator.comparing(Sequence::getOrder));
     return sequences.stream()
@@ -90,19 +102,26 @@ public class GraphQLQueryService {
 
   private List<Sequence> replaceSequencesWithSequenceGroups(List<Sequence> sequences,
       List<SequenceGroup> sequenceGroups) {
+    // Create a map for O(1) lookups instead of O(n) stream operations
+    java.util.Map<String, SequenceGroup> groupMap = new java.util.HashMap<>();
+    for (SequenceGroup group : sequenceGroups) {
+      groupMap.put(group.getName().toLowerCase(), group);
+    }
+
     List<Sequence> sequencesWithGroups = new ArrayList<>();
-    List<String> groupsAdded = new ArrayList<>();
+    java.util.Set<String> groupsAdded = new java.util.HashSet<>();
+
     for (Sequence sequence : sequences) {
       if (StringUtils.isNotEmpty(sequence.getGroup())) {
-        Optional<SequenceGroup> sequenceGroup = sequenceGroups.stream()
-            .filter(group -> StringUtils.equalsIgnoreCase(sequence.getGroup(), group.getName()))
-            .findFirst();
-        if (sequenceGroup.isPresent() && !groupsAdded.contains(sequence.getGroup())) {
-          groupsAdded.add(sequence.getGroup());
+        String groupKey = sequence.getGroup().toLowerCase();
+        SequenceGroup sequenceGroup = groupMap.get(groupKey);
 
-          sequence.setName(sequenceGroup.get().getName());
-          sequence.setDisplayName(sequenceGroup.get().getName());
-          sequence.setVisibilityCount(sequenceGroup.get().getVisibilityCount());
+        if (sequenceGroup != null && !groupsAdded.contains(groupKey)) {
+          groupsAdded.add(groupKey);
+
+          sequence.setName(sequenceGroup.getName());
+          sequence.setDisplayName(sequenceGroup.getName());
+          sequence.setVisibilityCount(sequenceGroup.getVisibilityCount());
 
           sequencesWithGroups.add(sequence);
         }

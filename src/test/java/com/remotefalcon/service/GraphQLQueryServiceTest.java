@@ -79,7 +79,7 @@ class GraphQLQueryServiceTest {
       show.getRequests().add(r1);
       show.getRequests().add(r2);
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findByShowSubdomainForViewer("sub")).thenReturn(Optional.of(show));
 
       // When
       Show result = service.getShow("sub");
@@ -116,7 +116,7 @@ class GraphQLQueryServiceTest {
 
       when(show.getPlayingNextFromSchedule()).thenReturn("songB");
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findByShowSubdomainForViewer("sub")).thenReturn(Optional.of(show));
 
       Show result = service.getShow("sub");
       assertSame(show, result);
@@ -150,7 +150,7 @@ class GraphQLQueryServiceTest {
       when(group.getVisibilityCount()).thenReturn(0);
       show.getSequenceGroups().add(group);
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findByShowSubdomainForViewer("sub")).thenReturn(Optional.of(show));
 
       service.getShow("sub");
 
@@ -175,7 +175,7 @@ class GraphQLQueryServiceTest {
     @Test
     @DisplayName("Should return null when show not found")
     void shouldReturnNullWhenShowMissing() {
-      when(showRepository.findByShowSubdomain("missing")).thenReturn(Optional.empty());
+      when(showRepository.findByShowSubdomainForViewer("missing")).thenReturn(Optional.empty());
       Show result = service.getShow("missing");
       assertNull(result);
     }

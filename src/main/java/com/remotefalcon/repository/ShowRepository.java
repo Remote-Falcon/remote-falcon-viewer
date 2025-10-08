@@ -16,6 +16,33 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     return find("showSubdomain", showSubdomain).firstResultOptional();
   }
 
+  public Optional<Show> findByShowSubdomainForViewer(String showSubdomain) {
+    // Exclude large fields that viewers don't need
+    Show result = mongoCollection()
+        .find(Filters.eq("showSubdomain", showSubdomain))
+        .projection(
+            com.mongodb.client.model.Projections.exclude(
+                "stats.page",              // Page stats can be huge
+                "stats.voting",            // Voting stats not needed by viewers
+                "stats.votingWin",         // Voting win stats not needed
+                "stats.jukebox",           // Jukebox stats not needed
+                "showToken",               // Sensitive authentication token
+                "email",                   // Sensitive PII
+                "password",                // Sensitive
+                "lastLoginIp",             // Sensitive field
+                "lastLoginDate",           // Not needed
+                "passwordResetLink",       // Sensitive
+                "passwordResetExpiry",     // Not needed
+                "apiAccess",               // Not needed by viewers
+                "userProfile",             // Not needed by viewers
+                "showNotifications",       // Not needed by viewers
+                "activeViewers"            // Contains other viewers' IP addresses (PII)
+            )
+        )
+        .first();
+    return Optional.ofNullable(result);
+  }
+
   public long nextRequestPosition(Show show) {
     if (show == null || show.getRequests() == null || show.getRequests().isEmpty()) {
       return 1L;
@@ -174,5 +201,17 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
             Updates.push("stats.jukebox", stat)
         )
     );
+  }
+
+  public long appendPageStatIfNotOwner(String showSubdomain, String clientIp, Stat.Page stat) {
+    // Only append stat if clientIp is different from lastLoginIp (owner's IP)
+    var result = mongoCollection().updateOne(
+        Filters.and(
+            Filters.eq("showSubdomain", showSubdomain),
+            Filters.ne("lastLoginIp", clientIp)
+        ),
+        Updates.push("stats.page", stat)
+    );
+    return result.getModifiedCount();
   }
 }

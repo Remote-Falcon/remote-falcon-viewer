@@ -32,21 +32,20 @@ public class GraphQLMutationService {
   RoutingContext context;
 
   public Boolean insertViewerPageStats(String showSubdomain, LocalDateTime date) {
-    Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
-    if (show.isPresent()) {
-      Show existingShow = show.get();
-      String clientIp = ClientUtil.getClientIP(context);
-      if (!StringUtils.equalsIgnoreCase(existingShow.getLastLoginIp(), clientIp)) {
-        Stat.Page pageStat = Stat.Page.builder()
-            .ip(clientIp)
-            .dateTime(date)
-            .build();
-        this.showRepository.appendPageStat(showSubdomain, pageStat);
-        return true;
-      }
-      return true;
+    String clientIp = ClientUtil.getClientIP(context);
+    if (StringUtils.isEmpty(clientIp)) {
+      return true; // Skip if no IP available
     }
-    throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+
+    // Only append if IP is different from lastLoginIp (owner)
+    // Use atomic operation to avoid reading entire document
+    Stat.Page pageStat = Stat.Page.builder()
+        .ip(clientIp)
+        .dateTime(date)
+        .build();
+
+    long modifiedCount = this.showRepository.appendPageStatIfNotOwner(showSubdomain, clientIp, pageStat);
+    return modifiedCount > 0; // Returns true if stat was added
   }
 
   public Boolean updateActiveViewers(String showSubdomain) {
