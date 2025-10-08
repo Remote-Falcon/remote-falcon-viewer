@@ -64,6 +64,7 @@ class GraphQLMutationServiceTest {
   private Show mockShowWithPrefsAndCollections() {
     // Use deep stubs to allow chaining on getPreferences()
     Show show = mock(Show.class, RETURNS_DEEP_STUBS);
+    when(show.getShowSubdomain()).thenReturn("sub");
     when(show.getLastLoginIp()).thenReturn("9.9.9.9");
 
     // Stats with real lists
@@ -584,19 +585,12 @@ class GraphQLMutationServiceTest {
       Boolean result = service.voteForSequence("sub", "song-a", 0f, 0f);
       assertTrue(result);
 
-      // A new vote should be added with 1 vote and viewer IP added
-      assertEquals(1, show.getVotes().size());
-      Vote v = show.getVotes().get(0);
-      assertEquals(1, v.getVotes());
-      assertSame(seq, v.getSequence());
-      assertTrue(v.getViewersVoted().contains("1.2.3.4"));
-      assertNotNull(v.getLastVoteTime());
-
-      // Voting stat added for non-grouped votes
-      assertEquals(1, show.getStats().getVoting().size());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify repository method was called to add new vote with stat
+      verify(showRepository).addNewVoteAndStat(eq("sub"), argThat(vote ->
+          vote.getSequence() == seq && vote.getVotes() == 1 && vote.getViewersVoted().contains("1.2.3.4")
+      ), argThat(stat ->
+          "song-a".equals(stat.getName())
+      ));
     }
 
     @Test
@@ -613,16 +607,12 @@ class GraphQLMutationServiceTest {
       Boolean result = service.voteForSequence("sub", "GroupX", 0f, 0f);
       assertTrue(result);
 
-      // A vote entry should be added for the group and a voting stat created
-      assertEquals(1, show.getVotes().size());
-      Vote v = show.getVotes().get(0);
-      assertSame(group, v.getSequenceGroup());
-      assertEquals(1, v.getVotes());
-      assertTrue(v.getViewersVoted().contains("1.2.3.4"));
-      assertEquals(1, show.getStats().getVoting().size());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify repository method was called to add new group vote with stat
+      verify(showRepository).addNewVoteAndStat(eq("sub"), argThat(vote ->
+          vote.getSequenceGroup() == group && vote.getVotes() == 1 && vote.getViewersVoted().contains("1.2.3.4")
+      ), argThat(stat ->
+          "GroupX".equals(stat.getName())
+      ));
     }
   }
 
@@ -634,7 +624,7 @@ class GraphQLMutationServiceTest {
     void existingVoteIncrementPath() throws Exception {
       Show show = mockShowWithPrefsAndCollections();
 
-      // Prepare existing vote for sequence "song-a" with mutable viewers list
+      // Prepare existing vote for sequence "song-a"
       Sequence seq = mock(Sequence.class);
       when(seq.getName()).thenReturn("song-a");
       Vote existing = Vote.builder()
@@ -647,8 +637,6 @@ class GraphQLMutationServiceTest {
       show.getVotes().add(existing);
 
       // Invoke private method with isGrouped=false
-      // Create a raw service instance and inject repository via reflection to avoid
-      // proxy issues
       GraphQLMutationService rawService = new GraphQLMutationService();
       var repoField = GraphQLMutationService.class.getDeclaredField("showRepository");
       repoField.setAccessible(true);
@@ -659,15 +647,10 @@ class GraphQLMutationServiceTest {
       m.setAccessible(true);
       m.invoke(rawService, show, seq, "1.2.3.4", Boolean.FALSE);
 
-      // Should have incremented votes, appended IP, updated time, and added voting
-      // stat
-      assertEquals(4, existing.getVotes());
-      assertTrue(existing.getViewersVoted().contains("1.2.3.4"));
-      assertTrue(existing.getLastVoteTime().isAfter(LocalDateTime.now().minusMinutes(1)));
-      assertEquals(1, show.getStats().getVoting().size());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify repository method was called to increment existing vote
+      verify(showRepository).incrementVoteAndAppendVoter(eq("sub"), eq("song-a"), eq("1.2.3.4"), any(LocalDateTime.class), argThat(stat ->
+          stat != null && "song-a".equals(stat.getName())
+      ));
     }
 
     @Test
@@ -679,7 +662,6 @@ class GraphQLMutationServiceTest {
       when(seq.getName()).thenReturn("group-seq");
 
       // Invoke private method with isGrouped=true and empty IP
-      // Create a raw service instance and inject repository
       GraphQLMutationService rawService = new GraphQLMutationService();
       var repoField = GraphQLMutationService.class.getDeclaredField("showRepository");
       repoField.setAccessible(true);
@@ -690,17 +672,10 @@ class GraphQLMutationServiceTest {
       m.setAccessible(true);
       m.invoke(rawService, show, seq, "", Boolean.TRUE);
 
-      // New vote created with votes=1001, viewer "" added, and no voting stat for
-      // grouped
-      assertEquals(1, show.getVotes().size());
-      Vote v = show.getVotes().get(0);
-      assertSame(seq, v.getSequence());
-      assertEquals(1001, v.getVotes());
-      assertTrue(v.getViewersVoted().contains(""));
-      assertEquals(0, show.getStats().getVoting().size());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify repository method was called to add new grouped vote (no stat for grouped)
+      verify(showRepository).addNewVoteAndStat(eq("sub"), argThat(vote ->
+          vote.getSequence() == seq && vote.getVotes() == 1001 && vote.getViewersVoted().contains("")
+      ), eq(null));
     }
   }
 
@@ -712,7 +687,7 @@ class GraphQLMutationServiceTest {
     void existingGroupVoteIncrementPath() throws Exception {
       Show show = mockShowWithPrefsAndCollections();
 
-      // Prepare existing vote for group "GroupG" with mutable viewers list
+      // Prepare existing vote for group "GroupG"
       SequenceGroup group = mock(SequenceGroup.class);
       when(group.getName()).thenReturn("GroupG");
       Vote existing = Vote.builder()
@@ -735,15 +710,10 @@ class GraphQLMutationServiceTest {
       m.setAccessible(true);
       m.invoke(rawService, show, group, "1.2.3.4");
 
-      // Assertions for lines 361-365 path
-      assertEquals(3, existing.getVotes());
-      assertTrue(existing.getViewersVoted().contains("1.2.3.4"));
-      assertTrue(existing.getLastVoteTime().isAfter(LocalDateTime.now().minusMinutes(1)));
-      // Voting stat added (always added after if/else)
-      assertEquals(1, show.getStats().getVoting().size());
-
-      // Note: Voting uses persist() which is not implemented yet
-      // verify(showRepository).persist(any(Show.class));
+      // Verify repository method was called to increment existing group vote
+      verify(showRepository).incrementSequenceGroupVoteAndAppendVoter(eq("sub"), eq("GroupG"), eq("1.2.3.4"), any(LocalDateTime.class), argThat(stat ->
+          stat != null && "GroupG".equals(stat.getName())
+      ));
     }
   }
 }
