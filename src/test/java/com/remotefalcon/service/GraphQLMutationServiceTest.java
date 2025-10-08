@@ -141,16 +141,12 @@ class GraphQLMutationServiceTest {
     @DisplayName("Should add active viewer and persist when IP differs from last login and remove existing duplicate")
     void shouldUpdateActiveViewers() {
       Show show = mockShowWithStatsAndActiveViewers("9.9.9.9");
-      ActiveViewer existing = mock(ActiveViewer.class);
-      when(existing.getIpAddress()).thenReturn("1.2.3.4");
-      show.getActiveViewers().add(existing);
       when(showRepository.findByShowSubdomain("test")).thenReturn(Optional.of(show));
 
       Boolean result = service.updateActiveViewers("test");
 
       assertTrue(result);
-      assertEquals(1, show.getActiveViewers().size());
-      verify(showRepository).persistOrUpdate(show);
+      verify(showRepository).updateActiveViewer(eq("test"), eq("1.2.3.4"), any(LocalDateTime.class));
     }
 
     @Test
@@ -162,7 +158,7 @@ class GraphQLMutationServiceTest {
       Boolean result = service.updateActiveViewers("test");
 
       assertTrue(result);
-      verify(showRepository, never()).persistOrUpdate(any(Show.class));
+      verify(showRepository, never()).updateActiveViewer(anyString(), anyString(), any());
     }
 
     @Test
@@ -185,8 +181,7 @@ class GraphQLMutationServiceTest {
       Boolean result = service.updatePlayingNow("test", "Song A");
 
       assertTrue(result);
-      verify(show).setPlayingNow("Song A");
-      verify(showRepository).persistOrUpdate(show);
+      verify(showRepository).updatePlayingNow("test", "Song A");
     }
 
     @Test
@@ -209,8 +204,7 @@ class GraphQLMutationServiceTest {
       Boolean result = service.updatePlayingNext("test", "Next Song");
 
       assertTrue(result);
-      verify(show).setPlayingNext("Next Song");
-      verify(showRepository).persistOrUpdate(show);
+      verify(showRepository).updatePlayingNext("test", "Next Song");
     }
 
     @Test

@@ -54,20 +54,8 @@ public class GraphQLMutationService {
     if (show.isPresent()) {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
-      List<String> existingIpAddresses = existingShow.getActiveViewers().stream().map(ActiveViewer::getIpAddress)
-          .toList();
       if (!StringUtils.equalsIgnoreCase(existingShow.getLastLoginIp(), clientIp)) {
-        if (existingIpAddresses.contains(clientIp)) {
-          Optional<ActiveViewer> activeViewer = existingShow.getActiveViewers().stream()
-              .filter(viewer -> StringUtils.equalsIgnoreCase(viewer.getIpAddress(), clientIp))
-              .findFirst();
-          activeViewer.ifPresent(viewer -> existingShow.getActiveViewers().remove(viewer));
-        }
-        existingShow.getActiveViewers().add(ActiveViewer.builder()
-            .ipAddress(clientIp)
-            .visitDateTime(LocalDateTime.now())
-            .build());
-        this.showRepository.persistOrUpdate(existingShow);
+        this.showRepository.updateActiveViewer(showSubdomain, clientIp, LocalDateTime.now());
       }
       return true;
     }
@@ -77,9 +65,7 @@ public class GraphQLMutationService {
   public Boolean updatePlayingNow(String showSubdomain, String playingNow) {
     Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
     if (show.isPresent()) {
-      Show existingShow = show.get();
-      existingShow.setPlayingNow(playingNow);
-      this.showRepository.persistOrUpdate(existingShow);
+      this.showRepository.updatePlayingNow(showSubdomain, playingNow);
       return true;
     }
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
@@ -88,9 +74,7 @@ public class GraphQLMutationService {
   public Boolean updatePlayingNext(String showSubdomain, String playingNext) {
     Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
     if (show.isPresent()) {
-      Show existingShow = show.get();
-      existingShow.setPlayingNext(playingNext);
-      this.showRepository.persistOrUpdate(existingShow);
+      this.showRepository.updatePlayingNext(showSubdomain, playingNext);
       return true;
     }
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
@@ -361,26 +345,40 @@ public class GraphQLMutationService {
         .filter(vote -> vote.getSequence() != null)
         .filter(vote -> StringUtils.equalsIgnoreCase(vote.getSequence().getName(), votedSequence.getName()))
         .findFirst();
+
+    LocalDateTime voteTime = LocalDateTime.now();
+    String voterIp = StringUtils.isEmpty(ipAddress) ? "" : ipAddress;
+
     if (sequenceVotes.isPresent()) {
-      sequenceVotes.get().setVotes(sequenceVotes.get().getVotes() + 1);
-      sequenceVotes.get().getViewersVoted().add(StringUtils.isEmpty(ipAddress) ? "" : ipAddress);
-      sequenceVotes.get().setLastVoteTime(LocalDateTime.now());
+      // Existing vote: increment count, append voter, update time, and add stat
+      Stat.Voting votingStat = isGrouped ? null : Stat.Voting.builder()
+          .dateTime(voteTime)
+          .name(votedSequence.getName())
+          .build();
+
+      if (isGrouped) {
+        // For grouped votes, don't add voting stat
+        this.showRepository.incrementVoteAndAppendVoter(show.getShowSubdomain(), votedSequence.getName(), voterIp, voteTime, null);
+      } else {
+        this.showRepository.incrementVoteAndAppendVoter(show.getShowSubdomain(), votedSequence.getName(), voterIp, voteTime, votingStat);
+      }
     } else {
-      show.getVotes().add(Vote.builder()
+      // New vote: add vote entry and stat
+      Vote newVote = Vote.builder()
           .sequence(votedSequence)
           .ownerVoted(false)
-          .lastVoteTime(LocalDateTime.now())
-          .viewersVoted(List.of(StringUtils.isEmpty(ipAddress) ? "" : ipAddress))
+          .lastVoteTime(voteTime)
+          .viewersVoted(List.of(voterIp))
           .votes(isGrouped ? 1001 : 1)
-          .build());
-    }
-    if (!isGrouped) {
-      show.getStats().getVoting().add(Stat.Voting.builder()
-          .dateTime(LocalDateTime.now())
+          .build();
+
+      Stat.Voting votingStat = isGrouped ? null : Stat.Voting.builder()
+          .dateTime(voteTime)
           .name(votedSequence.getName())
-          .build());
+          .build();
+
+      this.showRepository.addNewVoteAndStat(show.getShowSubdomain(), newVote, votingStat);
     }
-    this.showRepository.persistOrUpdate(show);
   }
 
   private void saveSequenceGroupVote(Show show, SequenceGroup votedSequenceGroup, String ipAddress) {
@@ -388,23 +386,33 @@ public class GraphQLMutationService {
         .filter(vote -> vote.getSequenceGroup() != null)
         .filter(vote -> StringUtils.equalsIgnoreCase(vote.getSequenceGroup().getName(), votedSequenceGroup.getName()))
         .findFirst();
+
+    LocalDateTime voteTime = LocalDateTime.now();
+    Stat.Voting votingStat = Stat.Voting.builder()
+        .dateTime(voteTime)
+        .name(votedSequenceGroup.getName())
+        .build();
+
     if (sequenceVotes.isPresent()) {
-      sequenceVotes.get().setVotes(sequenceVotes.get().getVotes() + 1);
-      sequenceVotes.get().getViewersVoted().add(ipAddress);
-      sequenceVotes.get().setLastVoteTime(LocalDateTime.now());
+      // Existing vote: increment count, append voter, update time, and add stat
+      this.showRepository.incrementSequenceGroupVoteAndAppendVoter(
+          show.getShowSubdomain(),
+          votedSequenceGroup.getName(),
+          ipAddress,
+          voteTime,
+          votingStat
+      );
     } else {
-      show.getVotes().add(Vote.builder()
+      // New vote: add vote entry and stat
+      Vote newVote = Vote.builder()
           .sequenceGroup(votedSequenceGroup)
           .ownerVoted(false)
-          .lastVoteTime(LocalDateTime.now())
+          .lastVoteTime(voteTime)
           .viewersVoted(List.of(ipAddress))
           .votes(1)
-          .build());
+          .build();
+
+      this.showRepository.addNewVoteAndStat(show.getShowSubdomain(), newVote, votingStat);
     }
-    show.getStats().getVoting().add(Stat.Voting.builder()
-        .dateTime(LocalDateTime.now())
-        .name(votedSequenceGroup.getName())
-        .build());
-    this.showRepository.persistOrUpdate(show);
   }
 }
