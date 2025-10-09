@@ -80,7 +80,8 @@ public class GraphQLMutationService {
   }
 
   public Boolean addSequenceToQueue(String showSubdomain, String name, Float latitude, Float longitude) {
-    Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
+    // Use optimized query that excludes large stats but keeps fields needed for validation
+    Optional<Show> show = this.showRepository.findByShowSubdomainForMutations(showSubdomain);
     if (show.isPresent()) {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
@@ -122,12 +123,15 @@ public class GraphQLMutationService {
         // Batched write: single DB call for both request and stat
         this.showRepository.appendRequestAndJukeboxStat(showSubdomain, request, jukeboxStat);
 
-        // Handle PSA if needed (re-fetch show to avoid stale data)
+        // Handle PSA if needed (calculate inline without re-fetching)
         if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
             && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
-          Show refreshedShow = this.showRepository.findByShowSubdomain(showSubdomain)
-              .orElseThrow(() -> new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name()));
-          this.handlePsaForJukebox(showSubdomain, refreshedShow);
+          // Calculate total requests today (existing + 1 we just added)
+          int requestsMadeToday = (int) show.get().getStats().getJukebox().stream()
+              .filter(stat -> stat.getDateTime().isAfter(LocalDateTime.now().withHour(0).withMinute(0).withSecond(0)))
+              .count() + 1; // +1 for the request we just added
+
+          this.handlePsaForJukeboxInline(showSubdomain, show.get(), requestsMadeToday);
         }
         return true;
       } else { // It's a sequence group
@@ -168,12 +172,15 @@ public class GraphQLMutationService {
           // Batched write: single DB call for all requests and stat
           this.showRepository.appendMultipleRequestsAndJukeboxStat(showSubdomain, requests, jukeboxStat);
 
-          // Handle PSA if needed (re-fetch show to avoid stale data)
+          // Handle PSA if needed (calculate inline without re-fetching)
           if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
               && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
-            Show refreshedShow = this.showRepository.findByShowSubdomain(showSubdomain)
-                .orElseThrow(() -> new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name()));
-            this.handlePsaForJukebox(showSubdomain, refreshedShow);
+            // Calculate total requests today (existing + 1 we just added for the group)
+            int requestsMadeToday = (int) show.get().getStats().getJukebox().stream()
+                .filter(stat -> stat.getDateTime().isAfter(LocalDateTime.now().withHour(0).withMinute(0).withSecond(0)))
+                .count() + 1; // +1 for the group request we just added
+
+            this.handlePsaForJukeboxInline(showSubdomain, show.get(), requestsMadeToday);
           }
           return true;
         }
@@ -186,7 +193,8 @@ public class GraphQLMutationService {
   }
 
   public Boolean voteForSequence(String showSubdomain, String name, Float latitude, Float longitude) {
-    Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
+    // Use optimized query that excludes large stats
+    Optional<Show> show = this.showRepository.findByShowSubdomainForMutations(showSubdomain);
     if (show.isPresent()) {
       Show existingShow = show.get();
       String clientIp = ClientUtil.getClientIP(context);
@@ -324,6 +332,23 @@ public class GraphQLMutationService {
         .filter(stat -> stat.getDateTime().isAfter(LocalDateTime.now().withHour(0).withMinute(0).withSecond(0)))
         .toList()
         .size();
+    if (requestsMadeToday % show.getPreferences().getPsaFrequency() == 0) {
+      Optional<PsaSequence> nextPsaSequence = show.getPsaSequences().stream()
+          .min(Comparator.comparing(PsaSequence::getLastPlayed)
+              .thenComparing(PsaSequence::getOrder));
+      if (nextPsaSequence.isPresent()) {
+        Optional<Sequence> sequenceToAdd = show.getSequences().stream()
+            .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), nextPsaSequence.get().getName()))
+            .findFirst();
+        show.getPsaSequences().get(show.getPsaSequences().indexOf(nextPsaSequence.get()))
+            .setLastPlayed(LocalDateTime.now());
+        sequenceToAdd.ifPresent(sequence -> this.saveSequenceRequest(showSubdomain, show, sequence, "PSA"));
+      }
+    }
+  }
+
+  private void handlePsaForJukeboxInline(String showSubdomain, Show show, int requestsMadeToday) {
+    // Inline PSA handling that doesn't require re-fetching show
     if (requestsMadeToday % show.getPreferences().getPsaFrequency() == 0) {
       Optional<PsaSequence> nextPsaSequence = show.getPsaSequences().stream()
           .min(Comparator.comparing(PsaSequence::getLastPlayed)

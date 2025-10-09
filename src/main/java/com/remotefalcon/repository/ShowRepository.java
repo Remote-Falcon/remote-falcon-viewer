@@ -43,6 +43,33 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     return Optional.ofNullable(result);
   }
 
+  public Optional<Show> findByShowSubdomainForMutations(String showSubdomain) {
+    // Optimized query for mutations (queue/vote operations)
+    // Excludes large stat arrays but includes necessary fields for validation
+    Show result = mongoCollection()
+        .find(Filters.eq("showSubdomain", showSubdomain))
+        .projection(
+            com.mongodb.client.model.Projections.exclude(
+                "stats.page",              // Page stats can be huge
+                "stats.voting",            // Voting stats not needed
+                "stats.votingWin",         // Not needed for mutations
+                // Keep stats.jukebox for PSA frequency calculation
+                "pages",                   // Not needed for queue/vote
+                "showToken",               // Sensitive
+                "email",                   // Sensitive PII
+                "password",                // Sensitive
+                "passwordResetLink",       // Sensitive
+                "passwordResetExpiry",     // Not needed
+                "apiAccess",               // Not needed
+                "userProfile",             // Not needed
+                "showNotifications",       // Not needed
+                "activeViewers"            // Not needed
+            )
+        )
+        .first();
+    return Optional.ofNullable(result);
+  }
+
   public long nextRequestPosition(Show show) {
     if (show == null || show.getRequests() == null || show.getRequests().isEmpty()) {
       return 1L;
