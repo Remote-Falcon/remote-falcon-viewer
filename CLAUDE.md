@@ -170,17 +170,70 @@ Key properties:
 
 ## Testing
 
-All services have corresponding test classes in `src/test/java`:
-- `GraphQLControllerTest`
-- `RestControllerTest`
-- `GraphQLMutationServiceTest`
-- `GraphQLQueryServiceTest`
-- `ClientUtilTest`
-- `LocationUtilTest`
+### Unit Tests
 
-Tests use JUnit 5, Quarkus test framework, and Mockito for mocking.
+All services have corresponding unit test classes in `src/test/java`:
+- `GraphQLControllerTest` - Tests GraphQL controller delegation
+- `RestControllerTest` - Tests REST endpoint behavior
+- `GraphQLMutationServiceTest` - Tests mutation business logic with mocks
+- `GraphQLQueryServiceTest` - Tests query business logic with mocks
+- `ClientUtilTest` - Tests client IP extraction logic
+- `LocationUtilTest` - Tests geo-location calculations
 
-Coverage reports are generated automatically after tests via JaCoCo.
+Unit tests use JUnit 5, Quarkus test framework, and Mockito for mocking dependencies.
+
+### Integration Tests
+
+End-to-end integration tests verify the complete flow from API to database:
+- `AddSequenceToQueueIntegrationTest` - Full E2E testing of the addSequenceToQueue mutation including:
+  - Successful sequence addition with database persistence verification
+  - Queue full validation
+  - Already requested validation
+  - Blocked IP validation
+  - Invalid location (geo-fencing) validation
+  - Sequence group expansion
+  - Concurrent request ordering
+
+Integration tests use **Testcontainers** to automatically provision a MongoDB instance in Docker:
+- No local MongoDB installation required
+- Tests automatically clean up data before and after each test
+- Container is reused between test runs for faster execution
+- Uses MongoDB 7.0 Docker image
+
+**Requirements**: Docker must be running on the machine executing tests (locally or in CI/CD).
+
+To run all tests including integration tests:
+```bash
+./gradlew test
+```
+
+To run only unit tests (skip integration tests):
+```bash
+./gradlew test --tests '*Test' --tests '!*IntegrationTest'
+```
+
+To run only integration tests:
+```bash
+./gradlew test --tests '*IntegrationTest'
+```
+
+### Test Configuration
+
+Test-specific configuration is in `src/test/resources/application-test.properties`:
+- Uses separate test database (`remote-falcon-test`)
+- MongoDB connection provided dynamically by `MongoTestResource` (Testcontainers)
+- Runs on port 8081 to avoid conflicts with dev instance
+- OpenTelemetry disabled for faster test execution
+- Debug logging enabled for troubleshooting
+- Container reuse enabled for faster test execution
+
+### Coverage Reports
+
+Coverage reports are generated automatically after tests via JaCoCo:
+```bash
+./gradlew test jacocoTestReport
+# Report: build/reports/jacoco/test/html/index.html
+```
 
 ## Docker & Deployment
 

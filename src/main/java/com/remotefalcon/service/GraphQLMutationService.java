@@ -327,26 +327,6 @@ public class GraphQLMutationService {
     show.getRequests().add(request);
   }
 
-  private void handlePsaForJukebox(String showSubdomain, Show show) {
-    Integer requestsMadeToday = show.getStats().getJukebox().stream()
-        .filter(stat -> stat.getDateTime().isAfter(LocalDateTime.now().withHour(0).withMinute(0).withSecond(0)))
-        .toList()
-        .size();
-    if (requestsMadeToday % show.getPreferences().getPsaFrequency() == 0) {
-      Optional<PsaSequence> nextPsaSequence = show.getPsaSequences().stream()
-          .min(Comparator.comparing(PsaSequence::getLastPlayed)
-              .thenComparing(PsaSequence::getOrder));
-      if (nextPsaSequence.isPresent()) {
-        Optional<Sequence> sequenceToAdd = show.getSequences().stream()
-            .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), nextPsaSequence.get().getName()))
-            .findFirst();
-        show.getPsaSequences().get(show.getPsaSequences().indexOf(nextPsaSequence.get()))
-            .setLastPlayed(LocalDateTime.now());
-        sequenceToAdd.ifPresent(sequence -> this.saveSequenceRequest(showSubdomain, show, sequence, "PSA"));
-      }
-    }
-  }
-
   private void handlePsaForJukeboxInline(String showSubdomain, Show show, int requestsMadeToday) {
     // Inline PSA handling that doesn't require re-fetching show
     if (requestsMadeToday % show.getPreferences().getPsaFrequency() == 0) {
