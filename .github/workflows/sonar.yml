@@ -22,6 +22,8 @@ jobs:
           distribution: 'graalvm-community'
       - name: Change wrapper permissions
         run: chmod +x ./gradlew
+      - name: Verify Docker is running
+        run: docker info
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:

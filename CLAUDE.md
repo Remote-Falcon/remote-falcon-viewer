@@ -197,10 +197,12 @@ End-to-end integration tests verify the complete flow from API to database:
 Integration tests use **Testcontainers** to automatically provision a MongoDB instance in Docker:
 - No local MongoDB installation required
 - Tests automatically clean up data before and after each test
-- Container is reused between test runs for faster execution
+- Container is reused between test runs for faster execution (local development)
 - Uses MongoDB 7.0 Docker image
 
 **Requirements**: Docker must be running on the machine executing tests (locally or in CI/CD).
+
+**CI/CD Support**: Integration tests work out-of-the-box in GitHub Actions with `ubuntu-latest` runners, which have Docker pre-installed. The `.testcontainers.properties` file ensures proper configuration.
 
 To run all tests including integration tests:
 ```bash
@@ -241,14 +243,18 @@ Coverage reports are generated automatically after tests via JaCoCo:
 
 Multi-stage build for GraalVM native image:
 1. **Build stage**: Uses `container-registry.oracle.com/graalvm/native-image:21`
-   - Runs `./gradlew clean build` with native enabled and JAR disabled
+   - Runs `./gradlew clean build -x test` with native enabled and JAR disabled
+   - **Tests are skipped** (`-x test`) because they run in the `sonar-analysis` job first
+   - Integration tests cannot run inside Docker build (would require Docker-in-Docker)
    - Passes `MONGO_URI` and `OTEL_URI` as build args
 2. **Runtime stage**: Uses `registry.access.redhat.com/ubi9/ubi-minimal:9.2`
    - Copies native binary from build stage
    - Runs as non-root user (1001)
    - Exposes port 8080
 
-**Important**: When building native images, you MUST pass `-Dquarkus.package.jar.enabled=false` to avoid the error: "Outputting both native and JAR packages is not currently supported."
+**Important**:
+- When building native images, you MUST pass `-Dquarkus.package.jar.enabled=false` to avoid the error: "Outputting both native and JAR packages is not currently supported."
+- Tests are skipped during Docker build with `-x test` since they already run in the CI pipeline before the Docker build.
 
 ### Building Docker Image
 ```bash
