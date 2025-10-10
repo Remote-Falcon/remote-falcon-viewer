@@ -13,8 +13,7 @@ RUN ./gradlew clean build -x test -Dquarkus.native.enabled=true \
   -Dquarkus.package.jar.enabled=false \
   -Dquarkus.native.container-build=false \
   -Dquarkus.native.builder-image=graalvm \
-  -Dquarkus.native.container-runtime=docker \
-  -Dquarkus.mongodb.connection-string=${MONGO_URI}
+  -Dquarkus.native.container-runtime=docker
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.2
 WORKDIR /app
@@ -35,6 +34,5 @@ USER 1001
 ENTRYPOINT [ \
   "/app/application", \
   "-XX:MaximumHeapSizePercent=75", \
-  "-Dquarkus.http.host=0.0.0.0", \
-  "-Dquarkus.mongodb.connection-string=${MONGO_URI}" \
+  "-Dquarkus.http.host=0.0.0.0" \
   ]

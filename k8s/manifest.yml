@@ -38,6 +38,12 @@ spec:
               cpu: #{Limits.CPU}#
           ports:
             - containerPort: 8080
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-connection
+                  key: MONGO_URI
           startupProbe:
             httpGet:
               path: /remote-falcon-viewer/q/health

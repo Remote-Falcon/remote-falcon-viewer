@@ -35,7 +35,10 @@ spec:
             - containerPort: 8080
           env:
             - name: MONGO_URI
-              value: mongodb://host.docker.internal:27017/remote-falcon?authSource=admin&connectTimeoutMS=2000&socketTimeoutMS=15000&maxIdleTimeMS=120000&waitQueueTimeoutMS=5000&maxPoolSize=600&minPoolSize=100
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-connection
+                  key: MONGO_URI
           startupProbe:
             httpGet:
               path: /remote-falcon-viewer/q/health
