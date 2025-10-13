@@ -265,6 +265,10 @@ public class GraphQLMutationService {
       if (latitude == null || longitude == null) {
         return false;
       }
+      if (show.getPreferences().getAllowedRadius() == null) {
+        log.errorf("GPS check enabled but allowedRadius is null for show: %s", show.getShowSubdomain());
+        return false;
+      }
       Double distance = LocationUtil.asTheCrowFlies(
           show.getPreferences().getShowLatitude(),
           show.getPreferences().getShowLongitude(),
