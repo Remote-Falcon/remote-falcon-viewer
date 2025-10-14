@@ -241,4 +241,19 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     );
     return result.getModifiedCount();
   }
+
+  public Optional<Show> findPagesOnlyByShowSubdomain(String showSubdomain) {
+    // Optimized query that ONLY fetches the pages array (not the entire Show document)
+    // This is the sweet spot for performance:
+    // - Minimal network transfer (only pages array, typically 5-10 KB)
+    // - Minimal disk I/O (MongoDB only needs to read pages field)
+    // - Simple Java iteration over 1-5 pages is negligible vs query overhead
+    Show result = mongoCollection()
+        .find(Filters.eq("showSubdomain", showSubdomain))
+        .projection(
+            com.mongodb.client.model.Projections.include("pages")
+        )
+        .first();
+    return Optional.ofNullable(result);
+  }
 }

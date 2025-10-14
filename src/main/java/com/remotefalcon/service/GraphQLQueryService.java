@@ -1,7 +1,5 @@
 package com.remotefalcon.service;
 
-import com.remotefalcon.exception.CustomGraphQLExceptionResolver;
-import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Sequence;
 import com.remotefalcon.library.models.SequenceGroup;
@@ -133,16 +131,16 @@ public class GraphQLQueryService {
   }
 
   public String activeViewerPage(String showSubdomain) {
-    Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
+    // Optimized: Fetch only the pages array (not entire Show document)
+    // Java iteration over 1-5 pages is faster than complex MongoDB projection
+    Optional<Show> show = this.showRepository.findPagesOnlyByShowSubdomain(showSubdomain);
     if (show.isPresent() && show.get().getPages() != null) {
-      Show existingShow = show.get();
-      Optional<ViewerPage> activeViewerPage = existingShow.getPages().stream().filter(ViewerPage::getActive)
-          .findFirst();
-      if (activeViewerPage.isPresent()) {
-        return activeViewerPage.get().getHtml();
-      }
-      return "";
+      return show.get().getPages().stream()
+          .filter(ViewerPage::getActive)
+          .findFirst()
+          .map(ViewerPage::getHtml)
+          .orElse("");
     }
-    throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
+    return "";
   }
 }

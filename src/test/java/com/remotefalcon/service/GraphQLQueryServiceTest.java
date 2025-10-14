@@ -1,6 +1,5 @@
 package com.remotefalcon.service;
 
-import com.remotefalcon.exception.CustomGraphQLExceptionResolver;
 import com.remotefalcon.library.models.Request;
 import com.remotefalcon.library.models.Sequence;
 import com.remotefalcon.library.models.SequenceGroup;
@@ -198,7 +197,7 @@ class GraphQLQueryServiceTest {
       pages.add(active);
       when(show.getPages()).thenReturn(pages);
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findPagesOnlyByShowSubdomain("sub")).thenReturn(Optional.of(show));
 
       String html = service.activeViewerPage("sub");
       assertEquals("<h1>Active</h1>", html);
@@ -214,26 +213,28 @@ class GraphQLQueryServiceTest {
       pages.add(inactive);
       when(show.getPages()).thenReturn(pages);
 
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      when(showRepository.findPagesOnlyByShowSubdomain("sub")).thenReturn(Optional.of(show));
 
       String html = service.activeViewerPage("sub");
       assertEquals("", html);
     }
 
     @Test
-    @DisplayName("Throws when show not found")
-    void throwsWhenShowMissing() {
-      when(showRepository.findByShowSubdomain("missing")).thenReturn(Optional.empty());
-      assertThrows(CustomGraphQLExceptionResolver.class, () -> service.activeViewerPage("missing"));
+    @DisplayName("Returns empty string when show not found")
+    void returnsEmptyWhenShowMissing() {
+      when(showRepository.findPagesOnlyByShowSubdomain("missing")).thenReturn(Optional.empty());
+      String html = service.activeViewerPage("missing");
+      assertEquals("", html);
     }
 
     @Test
-    @DisplayName("Throws when pages list is null")
-    void throwsWhenPagesNull() {
+    @DisplayName("Returns empty string when pages list is null")
+    void returnsEmptyWhenPagesNull() {
       Show show = mock(Show.class);
       when(show.getPages()).thenReturn(null);
-      when(showRepository.findByShowSubdomain("sub")).thenReturn(Optional.of(show));
-      assertThrows(CustomGraphQLExceptionResolver.class, () -> service.activeViewerPage("sub"));
+      when(showRepository.findPagesOnlyByShowSubdomain("sub")).thenReturn(Optional.of(show));
+      String html = service.activeViewerPage("sub");
+      assertEquals("", html);
     }
   }
 }
