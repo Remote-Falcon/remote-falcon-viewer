@@ -1,0 +1,38 @@
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /app
+COPY . .
+RUN sed -i 's/\r$//' ./gradlew
+RUN chmod +x ./gradlew
+
+ARG MONGO_URI
+ARG OTEL_URI
+ENV MONGO_URI=${MONGO_URI}
+ENV OTEL_URI=${OTEL_URI}
+
+# Build JVM version (much faster and less memory than native)
+RUN ./gradlew clean build -x test -Dquarkus.package.jar.type=uber-jar
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN addgroup -g 1001 appuser && adduser -D -u 1001 -G appuser appuser
+RUN chown 1001:1001 /app
+
+COPY --from=build --chown=1001:1001 /app/build/quarkus-app/*.jar /app/application.jar
+
+ARG MONGO_URI
+ARG OTEL_URI
+ENV MONGO_URI=${MONGO_URI}
+ENV OTEL_URI=${OTEL_URI}
+
+ENV DD_SERVICE=remote-falcon-viewer
+ENV DD_ENV=prod
+
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["java", \
+  "-Xmx256m", \
+  "-XX:+UseSerialGC", \
+  "-Dquarkus.http.host=0.0.0.0", \
+  "-jar", \
+  "/app/application.jar"]
