@@ -64,7 +64,19 @@ public class GraphQLMutationService {
   public Boolean updatePlayingNow(String showSubdomain, String playingNow) {
     Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
     if (show.isPresent()) {
-      this.showRepository.updatePlayingNow(showSubdomain, playingNow);
+      Show existingShow = show.get();
+
+      String resolvedPlayingNow = playingNow;
+      if (CollectionUtils.isNotEmpty(existingShow.getSequences())) {
+        resolvedPlayingNow = existingShow.getSequences().stream()
+            .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), playingNow))
+            .map(Sequence::getDisplayName)
+            .filter(StringUtils::isNotBlank)
+            .findFirst()
+            .orElse(playingNow);
+      }
+
+      this.showRepository.updatePlayingNow(showSubdomain, resolvedPlayingNow);
       return true;
     }
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
@@ -73,7 +85,19 @@ public class GraphQLMutationService {
   public Boolean updatePlayingNext(String showSubdomain, String playingNext) {
     Optional<Show> show = this.showRepository.findByShowSubdomain(showSubdomain);
     if (show.isPresent()) {
-      this.showRepository.updatePlayingNext(showSubdomain, playingNext);
+      Show existingShow = show.get();
+
+      String resolvedPlayingNext = playingNext;
+      if (CollectionUtils.isNotEmpty(existingShow.getSequences())) {
+        resolvedPlayingNext = existingShow.getSequences().stream()
+            .filter(sequence -> StringUtils.equalsIgnoreCase(sequence.getName(), playingNext))
+            .map(Sequence::getDisplayName)
+            .filter(StringUtils::isNotBlank)
+            .findFirst()
+            .orElse(playingNext);
+      }
+
+      this.showRepository.updatePlayingNext(showSubdomain, resolvedPlayingNext);
       return true;
     }
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());

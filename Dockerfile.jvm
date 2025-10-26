@@ -17,7 +17,7 @@ WORKDIR /app
 RUN addgroup -g 1001 appuser && adduser -D -u 1001 -G appuser appuser
 RUN chown 1001:1001 /app
 
-COPY --from=build --chown=1001:1001 /app/build/quarkus-app/*.jar /app/application.jar
+COPY --from=build --chown=1001:1001 /app/build/*-runner.jar /app/application.jar
 
 ARG MONGO_URI
 ARG OTEL_URI
