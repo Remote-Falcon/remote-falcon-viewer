@@ -58,6 +58,7 @@ public class GraphQLMutationService {
       }
       return true;
     }
+    log.errorf("updateActiveViewers unexpected: show not found for subdomain=%s", showSubdomain);
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }
 
@@ -79,6 +80,7 @@ public class GraphQLMutationService {
       this.showRepository.updatePlayingNow(showSubdomain, resolvedPlayingNow);
       return true;
     }
+    log.errorf("updatePlayingNow unexpected: show not found for subdomain=%s, playingNow=%s", showSubdomain, playingNow);
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }
 
@@ -100,6 +102,7 @@ public class GraphQLMutationService {
       this.showRepository.updatePlayingNext(showSubdomain, resolvedPlayingNext);
       return true;
     }
+    log.errorf("updatePlayingNext unexpected: show not found for subdomain=%s, playingNext=%s", showSubdomain, playingNext);
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }
 
@@ -251,6 +254,7 @@ public class GraphQLMutationService {
         }
       }
     }
+    log.errorf("voteForSequence unexpected: show or sequence not found for subdomain=%s, name=%s", showSubdomain, name);
     throw new CustomGraphQLExceptionResolver(StatusResponse.UNEXPECTED_ERROR.name());
   }
 
