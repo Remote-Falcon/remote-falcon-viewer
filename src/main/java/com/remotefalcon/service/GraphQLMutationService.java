@@ -5,6 +5,7 @@ import com.remotefalcon.library.enums.LocationCheckMethod;
 import com.remotefalcon.library.enums.StatusResponse;
 import com.remotefalcon.library.models.*;
 import com.remotefalcon.library.quarkus.entity.Show;
+import com.remotefalcon.metrics.ViewerMetrics;
 import com.remotefalcon.repository.ShowRepository;
 import com.remotefalcon.util.ClientUtil;
 import com.remotefalcon.util.LocationUtil;
@@ -30,6 +31,9 @@ public class GraphQLMutationService {
 
   @Inject
   RoutingContext context;
+
+  @Inject
+  ViewerMetrics viewerMetrics;
 
   public Boolean insertViewerPageStats(String showSubdomain, LocalDateTime date) {
     String clientIp = ClientUtil.getClientIP(context);
@@ -160,6 +164,7 @@ public class GraphQLMutationService {
 
           this.handlePsaForJukeboxInline(showSubdomain, show.get(), requestsMadeToday);
         }
+        viewerMetrics.recordRequestSuccess();
         return true;
       } else { // It's a sequence group
         Optional<SequenceGroup> requestedSequenceGroup = show.get().getSequenceGroups().stream()
@@ -209,6 +214,7 @@ public class GraphQLMutationService {
 
             this.handlePsaForJukeboxInline(showSubdomain, show.get(), requestsMadeToday);
           }
+          viewerMetrics.recordRequestSuccess();
           return true;
         }
       }
@@ -243,6 +249,7 @@ public class GraphQLMutationService {
           .findFirst();
       if (requestedSequence.isPresent()) {
         this.saveSequenceVote(existingShow, requestedSequence.get(), clientIp, false);
+        viewerMetrics.recordVoteSuccess();
         return true;
       } else { // It's a sequence group
         Optional<SequenceGroup> votedSequenceGroup = existingShow.getSequenceGroups().stream()
@@ -250,6 +257,7 @@ public class GraphQLMutationService {
             .findFirst();
         if (votedSequenceGroup.isPresent()) {
           this.saveSequenceGroupVote(existingShow, votedSequenceGroup.get(), clientIp);
+          viewerMetrics.recordVoteSuccess();
           return true;
         }
       }
