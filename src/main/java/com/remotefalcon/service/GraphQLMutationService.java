@@ -154,6 +154,12 @@ public class GraphQLMutationService {
         // Batched write: single DB call for both request and stat
         this.showRepository.appendRequestAndJukeboxStat(showSubdomain, request, jukeboxStat);
 
+        // Update in-memory list so PSA position calculation sees this request
+        if (show.get().getRequests() == null) {
+          show.get().setRequests(new ArrayList<>());
+        }
+        show.get().getRequests().add(request);
+
         // Handle PSA if needed (calculate inline without re-fetching)
         if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
             && CollectionUtils.isNotEmpty(show.get().getPsaSequences())) {
@@ -203,6 +209,12 @@ public class GraphQLMutationService {
 
           // Batched write: single DB call for all requests and stat
           this.showRepository.appendMultipleRequestsAndJukeboxStat(showSubdomain, requests, jukeboxStat);
+
+          // Update in-memory list so PSA position calculation sees these requests
+          if (show.get().getRequests() == null) {
+            show.get().setRequests(new ArrayList<>());
+          }
+          show.get().getRequests().addAll(requests);
 
           // Handle PSA if needed (calculate inline without re-fetching)
           if (show.get().getPreferences().getPsaEnabled() && !show.get().getPreferences().getManagePsa()
@@ -379,6 +391,7 @@ public class GraphQLMutationService {
             .findFirst();
         show.getPsaSequences().get(show.getPsaSequences().indexOf(nextPsaSequence.get()))
             .setLastPlayed(LocalDateTime.now());
+        this.showRepository.updatePsaSequences(showSubdomain, show.getPsaSequences());
         sequenceToAdd.ifPresent(sequence -> this.saveSequenceRequest(showSubdomain, show, sequence, "PSA"));
       }
     }

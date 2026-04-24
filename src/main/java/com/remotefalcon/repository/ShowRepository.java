@@ -230,6 +230,13 @@ public class ShowRepository implements PanacheMongoRepository<Show> {
     );
   }
 
+  public void updatePsaSequences(String showSubdomain, java.util.List<com.remotefalcon.library.models.PsaSequence> psaSequences) {
+    mongoCollection().updateOne(
+        Filters.eq("showSubdomain", showSubdomain),
+        Updates.set("psaSequences", psaSequences)
+    );
+  }
+
   public long appendPageStatIfNotOwner(String showSubdomain, String clientIp, Stat.Page stat) {
     // Only append stat if clientIp is different from lastLoginIp (owner's IP)
     var result = mongoCollection().updateOne(
